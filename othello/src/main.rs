@@ -16,6 +16,10 @@ impl Spot {
     }
 }
 
+fn clear_screen() {
+    print!("\x1B[2J\x1B[1;1H");
+}
+
 fn create_board() -> [[Spot; 8]; 8] {
     let mut board = [[Spot::Empty; 8]; 8];
     board[3][3] = Spot::White;
@@ -27,6 +31,7 @@ fn create_board() -> [[Spot; 8]; 8] {
 
 
 fn print_board(board: [[Spot; 8]; 8]) {
+    clear_screen();
     println!("+-----------------+");
     for row in board.iter() {
         print!("| ");
@@ -41,6 +46,6 @@ fn print_board(board: [[Spot; 8]; 8]) {
 
 fn main() {
     println!("Hello, world!");
-    let board = create_board();
+    let mut board = create_board();
     print_board(board);
 }
