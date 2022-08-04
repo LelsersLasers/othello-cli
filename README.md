@@ -1,0 +1,2 @@
+# Othello
+Othello in Rust
