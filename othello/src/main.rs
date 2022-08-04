@@ -1,6 +1,6 @@
 
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 enum Spot {
     Empty,
     Black,
@@ -12,6 +12,13 @@ impl Spot {
             Spot::Black => "X",
             Spot::White => "O",
             Spot::Empty => " ",
+        }
+    }
+    fn next_turn(&mut self) {
+        match self {
+            Spot::Black => *self = Spot::White,
+            Spot::White => *self = Spot::Black,
+            _ => unreachable!(),
         }
     }
 }
@@ -30,7 +37,7 @@ fn create_board() -> [[Spot; 8]; 8] {
 }
 
 
-fn print_board(board: [[Spot; 8]; 8]) {
+fn print_game(board: [[Spot; 8]; 8], current_turn: Spot) {
     clear_screen();
     println!("+-----------------+");
     for row in board.iter() {
@@ -41,11 +48,21 @@ fn print_board(board: [[Spot; 8]; 8]) {
         println!("|");
     }
     println!("+-----------------+");
+    if current_turn != Spot::Empty {
+        println!("Current turn: {}", current_turn.to_string());
+    } else {
+        println!("Game over!");
+    }
 }
 
 
 fn main() {
-    println!("Hello, world!");
     let mut board = create_board();
-    print_board(board);
+    let mut current_turn = Spot::Black;
+
+    loop {
+        print_game(board, current_turn);
+
+        current_turn.next_turn();
+    }
 }
