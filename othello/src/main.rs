@@ -1,5 +1,5 @@
-use std::io::prelude::*;
-// use rand::seq::SliceRandom;
+// use std::io::prelude::*;
+use rand::seq::SliceRandom;
 
 #[derive(Copy, Clone, PartialEq)]
 enum Spot {
@@ -37,7 +37,7 @@ fn create_board() -> [[Spot; 8]; 8] {
     board
 }
 
-fn print_game(board: [[Spot; 8]; 8], valid_moves: [[bool; 8]; 8], valid_moves_vec: Vec<[usize; 2]>, current_turn: Spot) {
+fn print_game(board: [[Spot; 8]; 8], valid_moves: [[bool; 8]; 8], valid_moves_vec: Vec<[usize; 2]>, current_turn: Spot, skip_turn: bool) {
     clear_screen();
 
     println!("\n   | 1 2 3 4 5 6 7 8 |");
@@ -61,6 +61,9 @@ fn print_game(board: [[Spot; 8]; 8], valid_moves: [[bool; 8]; 8], valid_moves_ve
 
     if current_turn != Spot::Empty {
         println!("Current turn: {}", current_turn.to_string());
+        if skip_turn {
+            println!("({}'s turn was skipped because they had no valid moves)", current_turn.get_flip().to_string());
+        }
         print!("Valid moves: ");
         for (i, pos) in valid_moves_vec.iter().enumerate() {
             print!("'{} {}'", pos[1] + 1, pos[0] + 1);
@@ -76,7 +79,7 @@ fn print_game(board: [[Spot; 8]; 8], valid_moves: [[bool; 8]; 8], valid_moves_ve
 }
 
 fn end_game(board: [[Spot; 8]; 8]) {
-    print_game(board, [[false; 8]; 8], vec![], Spot::Empty);
+    print_game(board, [[false; 8]; 8], vec![], Spot::Empty, false);
     let (black_total, white_total) = count_pieces(board);
     if black_total > white_total {
         println!("\n\nX's win!\n");
@@ -93,56 +96,57 @@ fn invalid_move(valid_moves: [[bool; 8]; 8], message: &'static str) -> [usize; 2
 }
 
 fn get_input(valid_moves: [[bool; 8]; 8]) -> [usize; 2] {
-    print!("Choose where to place piece: ");
+    // print!("Choose where to place piece: ");
 
-    std::io::stdout().flush().unwrap();
-    let mut input = String::new();
-    std::io::stdin()
-        .read_line(&mut input)
-        .expect("Failed to read line");
-    let string_parts = input.trim().split(' ');
+    // std::io::stdout().flush().unwrap();
+    // let mut input = String::new();
+    // std::io::stdin()
+    //     .read_line(&mut input)
+    //     .expect("Failed to read line");
+    // let string_parts = input.trim().split(' ');
 
-    let mut count = 0;
-    let mut pos: [usize; 2] = [0; 2];
-    for c in string_parts {
-        if count >= 2 {
-            return invalid_move(
-                valid_moves,
-                "Incorrectly formatted input (entered more than 2 numbers?)",
-            );
-        } else if c.len() != 1 {
-            return invalid_move(valid_moves, "Enter numbers only between 1 and 8");
-        }
-        let num = c.parse::<usize>();
-        match num {
-            Ok(n) => {
-                if n > 8 {
-                    return invalid_move(valid_moves, "Enter numbers only between 1 and 8");
-                }
-                pos[count] = n - 1;
-            }
-            Err(_) => return invalid_move(valid_moves, "Enter numbers only between 1 and 8"),
-        }
-        count += 1;
-    }
-    if count != 2 {
-        invalid_move(
-            valid_moves,
-            "Incorrectly formatted input (entered less than 2 numbers?)",
-        )
-    } else if !valid_moves[pos[0]][pos[1]] {
-        invalid_move(valid_moves, "You cannot move there")
-    } else {
-        pos
-    }
+    // let mut count = 0;
+    // let mut pos: [usize; 2] = [0; 2];
+    // for c in string_parts {
+    //     if count >= 2 {
+    //         return invalid_move(
+    //             valid_moves,
+    //             "Incorrectly formatted input (entered more than 2 numbers?)",
+    //         );
+    //     } else if c.len() != 1 {
+    //         return invalid_move(valid_moves, "Enter numbers only between 1 and 8");
+    //     }
+    //     let num = c.parse::<usize>();
+    //     match num {
+    //         Ok(n) => {
+    //             if n > 8 {
+    //                 return invalid_move(valid_moves, "Enter numbers only between 1 and 8");
+    //             }
+    //             pos[count] = n - 1;
+    //         }
+    //         Err(_) => return invalid_move(valid_moves, "Enter numbers only between 1 and 8"),
+    //     }
+    //     count += 1;
+    // }
+    // if count != 2 {
+    //     invalid_move(
+    //         valid_moves,
+    //         "Incorrectly formatted input (entered less than 2 numbers?)",
+    //     )
+    // } else if !valid_moves[pos[0]][pos[1]] {
+    //     invalid_move(valid_moves, "You cannot move there")
+    // } else {
+    //     pos
+    // }
 
     // randomly moves
-    // let valid_moves_vec = valid_moves_to_vec(valid_moves);
-    // let choice = valid_moves_vec.choose(&mut rand::thread_rng());
-    // match choice {
-    //     Some(choice) => *choice,
-    //     None => invalid_move(valid_moves, "No valid moves"),
-    // }
+    std::thread::sleep(std::time::Duration::from_millis(300)); // wait 0.3 sec
+    let valid_moves_vec = valid_moves_to_vec(valid_moves);
+    let choice = valid_moves_vec.choose(&mut rand::thread_rng());
+    match choice {
+        Some(choice) => *choice,
+        None => invalid_move(valid_moves, "No valid moves"),
+    }
 }
 
 fn find_valid_moves(board: [[Spot; 8]; 8], current_turn: Spot) -> [[bool; 8]; 8] {
@@ -262,19 +266,24 @@ fn count_pieces(board: [[Spot; 8]; 8]) -> (u32, u32) {
 fn main() {
     let mut board = create_board();
     let mut current_turn = Spot::Black;
-    // let mut no_valid_modes = false;
 
     loop {
-        let valid_moves_current = find_valid_moves(board, current_turn);
-        let valid_moves_current_vec = valid_moves_to_vec(valid_moves_current);
+
+        let mut valid_moves_current = find_valid_moves(board, current_turn);
+        let mut valid_moves_current_vec = valid_moves_to_vec(valid_moves_current);
         let valid_moves_opp = find_valid_moves(board, current_turn.get_flip());
         let valid_moves_opp_vec = valid_moves_to_vec(valid_moves_opp);
-
         if valid_moves_current_vec.len() == 0 && valid_moves_opp_vec.len() == 0 {
             break;
         }
+        let skip_turn = valid_moves_current_vec.len() == 0;
+        if skip_turn {
+            current_turn = current_turn.get_flip();
+            valid_moves_current = valid_moves_opp;
+            valid_moves_current_vec = valid_moves_opp_vec;
+        }
 
-        print_game(board, valid_moves_current, valid_moves_current_vec, current_turn);
+        print_game(board, valid_moves_current, valid_moves_current_vec, current_turn, skip_turn);
         let input = get_input(valid_moves_current);
         place_piece(&mut board, input, current_turn);
 
