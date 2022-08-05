@@ -1,4 +1,4 @@
-// use std::io::prelude::*;
+use std::io::prelude::*;
 use rand::seq::SliceRandom;
 
 #[derive(Copy, Clone, PartialEq)]
@@ -66,7 +66,7 @@ fn print_game(board: [[Spot; 8]; 8], valid_moves: [[bool; 8]; 8], valid_moves_ve
         }
         print!("Valid moves: ");
         for (i, pos) in valid_moves_vec.iter().enumerate() {
-            print!("'{} {}'", pos[1] + 1, pos[0] + 1);
+            print!("'{} {}'", pos[0] + 1, pos[1] + 1);
             if i != valid_moves_vec.len() - 1 {
                 print!(", ");
             } else {
@@ -96,51 +96,53 @@ fn invalid_move(valid_moves: [[bool; 8]; 8], message: &'static str) -> [usize; 2
 }
 
 fn get_input(valid_moves: [[bool; 8]; 8]) -> [usize; 2] {
-    // print!("Choose where to place piece: ");
+    print!("Choose where to place piece: ");
+    std::io::stdout().flush().unwrap();
 
-    // std::io::stdout().flush().unwrap();
-    // let mut input = String::new();
-    // std::io::stdin()
-    //     .read_line(&mut input)
-    //     .expect("Failed to read line");
-    // let string_parts = input.trim().split(' ');
+    let mut input = String::new();
+    std::io::stdin()
+        .read_line(&mut input)
+        .expect("Failed to read line");
+    let string_parts = input.trim().split(' ');
 
-    // let mut count = 0;
-    // let mut pos: [usize; 2] = [0; 2];
-    // for c in string_parts {
-    //     if count >= 2 {
-    //         return invalid_move(
-    //             valid_moves,
-    //             "Incorrectly formatted input (entered more than 2 numbers?)",
-    //         );
-    //     } else if c.len() != 1 {
-    //         return invalid_move(valid_moves, "Enter numbers only between 1 and 8");
-    //     }
-    //     let num = c.parse::<usize>();
-    //     match num {
-    //         Ok(n) => {
-    //             if n > 8 {
-    //                 return invalid_move(valid_moves, "Enter numbers only between 1 and 8");
-    //             }
-    //             pos[count] = n - 1;
-    //         }
-    //         Err(_) => return invalid_move(valid_moves, "Enter numbers only between 1 and 8"),
-    //     }
-    //     count += 1;
-    // }
-    // if count != 2 {
-    //     invalid_move(
-    //         valid_moves,
-    //         "Incorrectly formatted input (entered less than 2 numbers?)",
-    //     )
-    // } else if !valid_moves[pos[0]][pos[1]] {
-    //     invalid_move(valid_moves, "You cannot move there")
-    // } else {
-    //     pos
-    // }
+    let mut count = 0;
+    let mut pos: [usize; 2] = [0; 2];
+    for c in string_parts {
+        if count >= 2 {
+            return invalid_move(
+                valid_moves,
+                "Incorrectly formatted input (entered more than 2 numbers?)",
+            );
+        } else if c.len() != 1 {
+            return invalid_move(valid_moves, "Enter numbers only between 1 and 8");
+        }
+        let num = c.parse::<usize>();
+        match num {
+            Ok(n) => {
+                if n > 8 {
+                    return invalid_move(valid_moves, "Enter numbers only between 1 and 8");
+                }
+                pos[count] = n - 1;
+            }
+            Err(_) => return invalid_move(valid_moves, "Enter numbers only between 1 and 8"),
+        }
+        count += 1;
+    }
+    if count != 2 {
+        invalid_move(
+            valid_moves,
+            "Incorrectly formatted input (entered less than 2 numbers?)",
+        )
+    } else if !valid_moves[pos[0]][pos[1]] {
+        invalid_move(valid_moves, "You cannot move there")
+    } else {
+        pos
+    }
+}
 
-    // randomly moves
-    std::thread::sleep(std::time::Duration::from_millis(300)); // wait 0.3 sec
+fn ai_input(valid_moves: [[bool; 8]; 8]) -> [usize; 2] {
+     // randomly moves
+    std::thread::sleep(std::time::Duration::from_millis(600)); // wait 0.6 sec
     let valid_moves_vec = valid_moves_to_vec(valid_moves);
     let choice = valid_moves_vec.choose(&mut rand::thread_rng());
     match choice {
@@ -263,9 +265,28 @@ fn count_pieces(board: [[Spot; 8]; 8]) -> (u32, u32) {
     (black_total, white_total)
 }
 
+fn get_is_ai(player: Spot) -> bool {
+    print!("Should {} be controlled by the computer (Y/n)? ", player.to_string());
+    std::io::stdout().flush().unwrap();
+
+    let mut input = String::new();
+    std::io::stdin()
+        .read_line(&mut input)
+        .expect("Failed to read line");
+
+    let choice = input.chars().next();
+    match choice {
+        Some('n') | Some('N') => false,
+        _ => true,
+    }
+}
+
 fn main() {
     let mut board = create_board();
     let mut current_turn = Spot::Black;
+
+    let black_is_ai = get_is_ai(Spot::Black);
+    let white_is_ai = get_is_ai(Spot::White);
 
     loop {
 
@@ -284,7 +305,11 @@ fn main() {
         }
 
         print_game(board, valid_moves_current, valid_moves_current_vec, current_turn, skip_turn);
-        let input = get_input(valid_moves_current);
+        let input = if (current_turn == Spot::Black && black_is_ai) || (current_turn == Spot::White && white_is_ai) {
+            ai_input(valid_moves_current)
+        } else {
+            get_input(valid_moves_current)
+        };
         place_piece(&mut board, input, current_turn);
 
         current_turn = current_turn.get_flip();
