@@ -38,7 +38,7 @@ fn create_board() -> [[Spot; 8]; 8] {
 
 fn print_game(board: [[Spot; 8]; 8], current_turn: Spot) {
     clear_screen();
-    println!("   | 1 2 3 4 5 6 7 8 |");
+    println!("\n   | 1 2 3 4 5 6 7 8 |");
     println!(" --+-----------------+");
     for (y, row) in board.iter().enumerate() {
         print!(" {} | ", y + 1);
@@ -87,7 +87,7 @@ fn get_input(board: [[Spot; 8]; 8]) -> [usize; 2] {
                 if n > 8 {
                     return invalid_move(board, "Enter numbers only between 1 and 8");
                 }
-                pos[1 - count] = n - 1;
+                pos[1 - count] = n - 1; // 1 - count because we want to reverse the order
             }
             Err(_) => return invalid_move(board, "Enter numbers only between 1 and 8"),
         }
@@ -103,6 +103,44 @@ fn get_input(board: [[Spot; 8]; 8]) -> [usize; 2] {
     }
 }
 
+fn place_piece(board: &mut [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) {
+    // assumes valid move
+    board[pos[0]][pos[1]] = current_turn;
+    let dirs = [
+        [-1, -1],
+        [-1, 0],
+        [-1, 1],
+        [0, -1],
+        [0, 1],
+        [1, -1],
+        [1, 0],
+        [1, 1],
+    ];
+    for dir in dirs.iter() {
+        let mut dist = 2;
+        let mut found = false;
+        loop {
+            let x = pos[0] as i32 + dir[0] * dist;
+            let y = pos[1] as i32 + dir[1] * dist;
+            if !(0..=7).contains(&x) || !(0..=7).contains(&y) || board[x as usize][y as usize] == Spot::Empty {
+                break;
+            }
+            if board[x as usize][y as usize] == current_turn {
+                found = true;
+                break;
+            }
+            dist += 1;
+        }
+        if found {
+            for i in 1..dist {
+                let x = pos[0] as i32 + dir[0] * i;
+                let y = pos[1] as i32 + dir[1] * i;
+                board[x as usize][y as usize] = current_turn;
+            }
+        }
+    }
+}
+
 fn main() {
     let mut board = create_board();
     let mut current_turn = Spot::Black;
@@ -110,7 +148,7 @@ fn main() {
     loop {
         print_game(board, current_turn);
         let input = get_input(board);
-        board[input[0]][input[1]] = current_turn;
+        place_piece(&mut board, input, current_turn);
 
         current_turn.flip();
     }
