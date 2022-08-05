@@ -36,10 +36,8 @@ fn create_board() -> [[Spot; 8]; 8] {
     board
 }
 
-fn print_game(board: [[Spot; 8]; 8], valid_moves: [[bool; 8]; 8], current_turn: Spot) {
+fn print_game(board: [[Spot; 8]; 8], valid_moves: [[bool; 8]; 8], valid_moves_vec: Vec<[usize; 2]>, current_turn: Spot) {
     clear_screen();
-
-    let mut valid_moves_text: Vec<[usize; 2]> = vec![];
 
     println!("\n   | 1 2 3 4 5 6 7 8 |");
     println!(" --+-----------------+");
@@ -48,11 +46,6 @@ fn print_game(board: [[Spot; 8]; 8], valid_moves: [[bool; 8]; 8], current_turn: 
         for x in 0..8 {
             if valid_moves[x][y] {
                 print!(". ");
-                valid_moves_text.push([y, x]);
-            // }
-            // if valid_move(board, [y, x], current_turn) {
-            //     print!(". ");
-            //     valid_moves.push([y, x]);
             } else {
                 print!("{} ", board[x][y].to_string());
             }
@@ -81,9 +74,9 @@ fn print_game(board: [[Spot; 8]; 8], valid_moves: [[bool; 8]; 8], current_turn: 
         //     println!("No valid moves, skipped {}'s turn", current_turn.get_flip().to_string());
         // }
         print!("Valid moves: ");
-        for (i, pos) in valid_moves_text.iter().enumerate() {
+        for (i, pos) in valid_moves_vec.iter().enumerate() {
             print!("'{} {}'", pos[1] + 1, pos[0] + 1);
-            if i != valid_moves_text.len() - 1 {
+            if i != valid_moves_vec.len() - 1 {
                 print!(", ");
             } else {
                 println!("");
@@ -154,6 +147,18 @@ fn find_valid_moves(board: [[Spot; 8]; 8], current_turn: Spot) -> [[bool; 8]; 8]
         }
     }
     valid_moves
+}
+
+fn valid_moves_to_vec(valid_moves: [[bool; 8]; 8]) -> Vec<[usize; 2]> {
+    let mut valid_moves_vec: Vec<[usize; 2]> = vec![];
+    for y in 0..8 {
+        for x in 0..8 {
+            if valid_moves[x][y] {
+                valid_moves_vec.push([x, y]);
+            }
+        }
+    }
+    valid_moves_vec
 }
 
 fn valid_move(board: [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) -> bool {
@@ -235,12 +240,20 @@ fn main() {
     let mut board = create_board();
     // board[1][3] = Spot::White;
     let mut current_turn = Spot::Black;
-    // let mut no_valid_modes = false;
+    let mut no_valid_modes = false;
 
     loop {
-        let valid_moves = find_valid_moves(board, current_turn);
-        print_game(board, valid_moves, current_turn);
-        let input = get_input(valid_moves);
+        let valid_moves_current = find_valid_moves(board, current_turn);
+        let valid_moves_current_vec = valid_moves_to_vec(valid_moves_current);
+        let valid_moves_opp = find_valid_moves(board, current_turn.get_flip());
+        let valid_moves_opp_vec = valid_moves_to_vec(valid_moves_opp);
+
+        if valid_moves_current_vec.len() == 0 && valid_moves_opp_vec.len() == 0 {
+            break;
+        }
+
+        print_game(board, valid_moves_current, valid_moves_current_vec, current_turn);
+        let input = get_input(valid_moves_current);
         place_piece(&mut board, input, current_turn);
 
         current_turn = current_turn.get_flip();
