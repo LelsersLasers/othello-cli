@@ -1,4 +1,4 @@
-
+use std::io::prelude::*;
 
 #[derive(Copy, Clone, PartialEq)]
 enum Spot {
@@ -39,19 +39,62 @@ fn create_board() -> [[Spot; 8]; 8] {
 
 fn print_game(board: [[Spot; 8]; 8], current_turn: Spot) {
     clear_screen();
-    println!("+-----------------+");
-    for row in board.iter() {
-        print!("| ");
-        for spot in row.iter() {
+    println!("   | 1 2 3 4 5 6 7 8 |");
+    println!(" --+-----------------+");
+    for y in 0..8 {
+        print!(" {} | ", y + 1);
+        for spot in board[y].iter() {
             print!("{} ", spot.to_string());
         }
         println!("|");
     }
-    println!("+-----------------+");
+    println!("   +-----------------+");
     if current_turn != Spot::Empty {
         println!("Current turn: {}", current_turn.to_string());
     } else {
         println!("Game over!");
+    }
+}
+
+fn invalid_move(board: [[Spot; 8]; 8], message: &'static str) -> [usize; 2]  {
+    println!("{}", message);
+    get_input(board)
+}
+
+fn get_input(board: [[Spot; 8]; 8]) -> [usize; 2] {
+    print!("Choose where to place piece (ex: '4 3'): ");
+
+    std::io::stdout().flush().unwrap();
+    let mut input = String::new();
+    std::io::stdin()
+        .read_line(&mut input)
+        .expect("Failed to read line");
+    let string_parts = input.trim().split(" ");
+    
+    let mut count = 0;
+    let mut pos: [usize; 2] = [0; 2];
+    for c in string_parts {
+        if count >= 2 {
+            return invalid_move(board, "Incorrectly formatted input (entered more than 2 numbers?");
+        } else if c.len() != 1 {
+            return invalid_move(board, "Enter numbers only between 1 and 8");
+        }
+        let num = c.parse::<usize>();
+        match num {
+            Ok(n) => {
+                if n > 8 {
+                    return invalid_move(board, "Enter numbers only between 1 and 8");
+                }
+                pos[1 - count] = n - 1;
+            }
+            Err(_) => return invalid_move(board, "Enter numbers only between 1 and 8"),
+        }
+        count += 1;
+    }
+    if count != 2 {
+        invalid_move(board, "Incorrectly formatted input (entered less than 2 numbers?)")
+    } else {
+        pos
     }
 }
 
@@ -62,6 +105,8 @@ fn main() {
 
     loop {
         print_game(board, current_turn);
+        let input = get_input(board);
+        board[input[0]][input[1]] = current_turn;
 
         current_turn.next_turn();
     }
