@@ -1,1 +1,1 @@
-C:\Users\milla\Desktop\coding\Othello\othello\target\debug\othello.exe: C:\Users\milla\Desktop\coding\Othello\othello\src\main.rs
+C:\Users\milla\Desktop\Code\Othello\othello\target\debug\othello.exe: C:\Users\milla\Desktop\Code\Othello\othello\src\main.rs

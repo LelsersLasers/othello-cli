@@ -1,4 +1,5 @@
 use std::io::prelude::*;
+// use rand::seq::SliceRandom;
 
 #[derive(Copy, Clone, PartialEq)]
 enum Spot {
@@ -54,25 +55,12 @@ fn print_game(board: [[Spot; 8]; 8], valid_moves: [[bool; 8]; 8], valid_moves_ve
     }
     println!("   +-----------------+");
 
-    let mut black_total = 0;
-    let mut white_total = 0;
-    for row in board.iter() {
-        for spot in row.iter() {
-            match spot {
-                Spot::Black => black_total += 1,
-                Spot::White => white_total += 1,
-                _ => (),
-            }
-        }
-    }
-    println!("X's: {} ", black_total);
+    let (black_total, white_total) = count_pieces(board);
+    println!("X's: {}", black_total);
     println!("O's: {}", white_total);
 
     if current_turn != Spot::Empty {
         println!("Current turn: {}", current_turn.to_string());
-        // if valid_moves.len() == 0 {
-        //     println!("No valid moves, skipped {}'s turn", current_turn.get_flip().to_string());
-        // }
         print!("Valid moves: ");
         for (i, pos) in valid_moves_vec.iter().enumerate() {
             print!("'{} {}'", pos[1] + 1, pos[0] + 1);
@@ -84,6 +72,18 @@ fn print_game(board: [[Spot; 8]; 8], valid_moves: [[bool; 8]; 8], valid_moves_ve
         }
     } else {
         println!("Game over!");
+    }
+}
+
+fn end_game(board: [[Spot; 8]; 8]) {
+    print_game(board, [[false; 8]; 8], vec![], Spot::Empty);
+    let (black_total, white_total) = count_pieces(board);
+    if black_total > white_total {
+        println!("\n\nX's win!\n");
+    } else if white_total > black_total {
+        println!("\n\nO's win!\n");
+    } else {
+        println!("\n\nTie!\n");
     }
 }
 
@@ -135,6 +135,14 @@ fn get_input(valid_moves: [[bool; 8]; 8]) -> [usize; 2] {
     } else {
         pos
     }
+
+    // randomly moves
+    // let valid_moves_vec = valid_moves_to_vec(valid_moves);
+    // let choice = valid_moves_vec.choose(&mut rand::thread_rng());
+    // match choice {
+    //     Some(choice) => *choice,
+    //     None => invalid_move(valid_moves, "No valid moves"),
+    // }
 }
 
 fn find_valid_moves(board: [[Spot; 8]; 8], current_turn: Spot) -> [[bool; 8]; 8] {
@@ -236,11 +244,25 @@ fn place_piece(board: &mut [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) 
     }
 }
 
+fn count_pieces(board: [[Spot; 8]; 8]) -> (u32, u32) {
+    let mut black_total = 0;
+    let mut white_total = 0;
+    for row in board.iter() {
+        for spot in row.iter() {
+            match spot {
+                Spot::Black => black_total += 1,
+                Spot::White => white_total += 1,
+                _ => (),
+            }
+        }
+    }
+    (black_total, white_total)
+}
+
 fn main() {
     let mut board = create_board();
-    // board[1][3] = Spot::White;
     let mut current_turn = Spot::Black;
-    let mut no_valid_modes = false;
+    // let mut no_valid_modes = false;
 
     loop {
         let valid_moves_current = find_valid_moves(board, current_turn);
@@ -258,4 +280,5 @@ fn main() {
 
         current_turn = current_turn.get_flip();
     }
+    end_game(board);
 }
