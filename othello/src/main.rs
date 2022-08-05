@@ -14,12 +14,12 @@ impl Spot {
             Spot::Empty => " ",
         }
     }
-    fn flip(&mut self) {
-        *self = match self {
+    fn get_flip(self) -> Spot {
+        match self {
             Spot::Black => Spot::White,
             Spot::White => Spot::Black,
             Spot::Empty => Spot::Empty,
-        };
+        }
     }
 }
 
@@ -36,7 +36,7 @@ fn create_board() -> [[Spot; 8]; 8] {
     board
 }
 
-fn print_game(board: [[Spot; 8]; 8], current_turn: Spot) {
+fn print_game(board: [[Spot; 8]; 8], current_turn: Spot) -> Vec<[usize; 2]> {
     clear_screen();
 
     let mut valid_moves: Vec<[usize; 2]> = vec![];
@@ -46,9 +46,9 @@ fn print_game(board: [[Spot; 8]; 8], current_turn: Spot) {
     for (y, row) in board.iter().enumerate() {
         print!(" {} | ", y + 1);
         for (x, spot) in row.iter().enumerate() {
-            if valid_move(board, [x, y], current_turn) {
+            if valid_move(board, [y, x], current_turn) {
                 print!(". ");
-                valid_moves.push([x, y]);
+                valid_moves.push([y, x]);
             } else {
                 print!("{} ", spot.to_string());
             }
@@ -58,9 +58,12 @@ fn print_game(board: [[Spot; 8]; 8], current_turn: Spot) {
     println!("   +-----------------+");
     if current_turn != Spot::Empty {
         println!("Current turn: {}", current_turn.to_string());
+        if valid_moves.len() == 0 {
+            println!("No valid moves, skipped {}'s turn", current_turn.get_flip().to_string());
+        }
         print!("Valid moves: ");
         for (i, pos) in valid_moves.iter().enumerate() {
-            print!("'{} {}'", pos[0] + 1, pos[1] + 1);
+            print!("'{} {}'", pos[1] + 1, pos[0] + 1);
             if i != valid_moves.len() - 1 {
                 print!(", ");
             }
@@ -71,14 +74,15 @@ fn print_game(board: [[Spot; 8]; 8], current_turn: Spot) {
     } else {
         println!("Game over!");
     }
+    valid_moves
 }
 
-fn invalid_move(board: [[Spot; 8]; 8], message: &'static str) -> [usize; 2] {
+fn invalid_move(valid_moves: Vec<[usize; 2]>, message: &'static str) -> [usize; 2] {
     println!("{}", message);
-    get_input(board)
+    get_input(valid_moves)
 }
 
-fn get_input(board: [[Spot; 8]; 8]) -> [usize; 2] {
+fn get_input(valid_moves: Vec<[usize; 2]>) -> [usize; 2] {
     print!("Choose where to place piece: ");
 
     std::io::stdout().flush().unwrap();
@@ -93,29 +97,31 @@ fn get_input(board: [[Spot; 8]; 8]) -> [usize; 2] {
     for c in string_parts {
         if count >= 2 {
             return invalid_move(
-                board,
+                valid_moves,
                 "Incorrectly formatted input (entered more than 2 numbers?)",
             );
         } else if c.len() != 1 {
-            return invalid_move(board, "Enter numbers only between 1 and 8");
+            return invalid_move(valid_moves, "Enter numbers only between 1 and 8");
         }
         let num = c.parse::<usize>();
         match num {
             Ok(n) => {
                 if n > 8 {
-                    return invalid_move(board, "Enter numbers only between 1 and 8");
+                    return invalid_move(valid_moves, "Enter numbers only between 1 and 8");
                 }
                 pos[1 - count] = n - 1; // 1 - count because we want to reverse the order
             }
-            Err(_) => return invalid_move(board, "Enter numbers only between 1 and 8"),
+            Err(_) => return invalid_move(valid_moves, "Enter numbers only between 1 and 8"),
         }
         count += 1;
     }
     if count != 2 {
         invalid_move(
-            board,
+            valid_moves,
             "Incorrectly formatted input (entered less than 2 numbers?)",
         )
+    } else if !valid_moves.contains(&pos) {
+        invalid_move(valid_moves, "You cannot move there")
     } else {
         pos
     }
@@ -144,11 +150,11 @@ fn valid_move(board: [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) -> boo
             if !(0..=7).contains(&x)
                 || !(0..=7).contains(&y)
                 || board[x as usize][y as usize] == Spot::Empty
-                || (dist == 1 && board[x as usize][y as usize] == current_turn)
+                || (dist == 1 && board[x as usize][y as usize] != current_turn.get_flip())
             {
                 break;
             }
-            if board[x as usize][y as usize] == current_turn {
+            else if board[x as usize][y as usize] == current_turn {
                 return true;
             }
             dist += 1;
@@ -178,11 +184,11 @@ fn place_piece(board: &mut [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) 
             let y = pos[1] as i32 + dir[1] * dist;
             if !(0..=7).contains(&x)
                 || !(0..=7).contains(&y)
-                || board[x as usize][y as usize] == Spot::Empty
+                || (dist == 1 && board[x as usize][y as usize] != current_turn.get_flip())
             {
                 break;
             }
-            if board[x as usize][y as usize] == current_turn {
+            else if board[x as usize][y as usize] == current_turn {
                 found = true;
                 break;
             }
@@ -203,10 +209,10 @@ fn main() {
     let mut current_turn = Spot::Black;
 
     loop {
-        print_game(board, current_turn);
-        let input = get_input(board);
+        let valid_moves = print_game(board, current_turn);
+        let input = get_input(valid_moves);
         place_piece(&mut board, input, current_turn);
 
-        current_turn.flip();
+        current_turn = current_turn.get_flip();
     }
 }
