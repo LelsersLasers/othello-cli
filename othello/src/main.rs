@@ -56,6 +56,21 @@ fn print_game(board: [[Spot; 8]; 8], current_turn: Spot) -> Vec<[usize; 2]> {
         println!("|");
     }
     println!("   +-----------------+");
+
+    let mut black_total = 0;
+    let mut white_total = 0;
+    for row in board.iter() {
+        for spot in row.iter() {
+            match spot {
+                Spot::Black => black_total += 1,
+                Spot::White => white_total += 1,
+                _ => (),
+            }
+        }
+    }
+    println!("X's: {} ", black_total);
+    println!("O's: {}", white_total);
+
     if current_turn != Spot::Empty {
         println!("Current turn: {}", current_turn.to_string());
         if valid_moves.len() == 0 {
