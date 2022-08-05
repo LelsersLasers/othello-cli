@@ -38,18 +38,36 @@ fn create_board() -> [[Spot; 8]; 8] {
 
 fn print_game(board: [[Spot; 8]; 8], current_turn: Spot) {
     clear_screen();
+
+    let mut valid_moves: Vec<[usize; 2]> = vec![];
+
     println!("\n   | 1 2 3 4 5 6 7 8 |");
     println!(" --+-----------------+");
     for (y, row) in board.iter().enumerate() {
         print!(" {} | ", y + 1);
-        for spot in row.iter() {
-            print!("{} ", spot.to_string());
+        for (x, spot) in row.iter().enumerate() {
+            if valid_move(board, [x, y], current_turn) {
+                print!(". ");
+                valid_moves.push([x, y]);
+            } else {
+                print!("{} ", spot.to_string());
+            }
         }
         println!("|");
     }
     println!("   +-----------------+");
     if current_turn != Spot::Empty {
         println!("Current turn: {}", current_turn.to_string());
+        print!("Valid moves: ");
+        for (i, pos) in valid_moves.iter().enumerate() {
+            print!("'{} {}'", pos[0] + 1, pos[1] + 1);
+            if i != valid_moves.len() - 1 {
+                print!(", ");
+            }
+            else {
+                println!("");
+            }
+        }
     } else {
         println!("Game over!");
     }
@@ -61,7 +79,7 @@ fn invalid_move(board: [[Spot; 8]; 8], message: &'static str) -> [usize; 2] {
 }
 
 fn get_input(board: [[Spot; 8]; 8]) -> [usize; 2] {
-    print!("Choose where to place piece (ex: '4 3'): ");
+    print!("Choose where to place piece: ");
 
     std::io::stdout().flush().unwrap();
     let mut input = String::new();
@@ -103,6 +121,42 @@ fn get_input(board: [[Spot; 8]; 8]) -> [usize; 2] {
     }
 }
 
+fn valid_move(board: [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) -> bool {
+    if board[pos[0]][pos[1]] != Spot::Empty {
+        return false;
+    }
+
+    let dirs = [
+        [-1, -1],
+        [-1, 0],
+        [-1, 1],
+        [0, -1],
+        [0, 1],
+        [1, -1],
+        [1, 0],
+        [1, 1],
+    ];
+    for dir in dirs.iter() {
+        let mut dist = 1;
+        loop {
+            let x = pos[0] as i32 + dir[0] * dist;
+            let y = pos[1] as i32 + dir[1] * dist;
+            if !(0..=7).contains(&x)
+                || !(0..=7).contains(&y)
+                || board[x as usize][y as usize] == Spot::Empty
+                || (dist == 1 && board[x as usize][y as usize] == current_turn)
+            {
+                break;
+            }
+            if board[x as usize][y as usize] == current_turn {
+                return true;
+            }
+            dist += 1;
+        }
+    }
+    false
+}
+
 fn place_piece(board: &mut [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) {
     // assumes valid move
     board[pos[0]][pos[1]] = current_turn;
@@ -117,12 +171,15 @@ fn place_piece(board: &mut [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) 
         [1, 1],
     ];
     for dir in dirs.iter() {
-        let mut dist = 2;
+        let mut dist = 1;
         let mut found = false;
         loop {
             let x = pos[0] as i32 + dir[0] * dist;
             let y = pos[1] as i32 + dir[1] * dist;
-            if !(0..=7).contains(&x) || !(0..=7).contains(&y) || board[x as usize][y as usize] == Spot::Empty {
+            if !(0..=7).contains(&x)
+                || !(0..=7).contains(&y)
+                || board[x as usize][y as usize] == Spot::Empty
+            {
                 break;
             }
             if board[x as usize][y as usize] == current_turn {
