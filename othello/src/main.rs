@@ -1,6 +1,6 @@
+use colored::Colorize;
 use rand::seq::SliceRandom;
 use std::io::prelude::*;
-use colored::Colorize;
 
 #[derive(Copy, Clone, PartialEq)]
 enum Spot {
@@ -53,7 +53,7 @@ fn print_game(
         // I think 0..8 is cleaner, but clippy wants this
         for (x, _item) in board.iter().enumerate() {
             if valid_moves.contains(&[x, y]) {
-                print!("{} ", format!(".").cyan());
+                print!("{} ", ".".cyan());
             } else {
                 print!("{} ", board[x][y].to_string());
             }
@@ -91,10 +91,17 @@ fn print_game(
 fn end_game(board: [[Spot; 8]; 8]) {
     print_game(board, &Vec::new(), Spot::Empty, false);
     let (black_total, white_total) = count_pieces(board);
-    match black_total {
-        x if x > white_total => println!("\n\nX wins!\n"),
-        x if x < white_total => println!("\n\nO wins!\n"),
-        _ => println!("\n\nIt's a tie!\n"),
+    if black_total == white_total {
+        println!("\n\nIt's a {}!\n", "tie".cyan());
+    } else {
+        println!(
+            "\n\n{}'s wins!\n",
+            if black_total > white_total {
+                Spot::Black.to_string()
+            } else {
+                Spot::White.to_string()
+            }
+        );
     }
 }
 
