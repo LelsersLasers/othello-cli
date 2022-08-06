@@ -63,7 +63,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "505e71a4706fa491e9b1b55f51b95d4037d0821ee40131190475f692b35b009b"
 
 [[package]]
-name = "othello"
+name = "othello-cli"
 version = "1.0.0"
 dependencies = [
  "colored",

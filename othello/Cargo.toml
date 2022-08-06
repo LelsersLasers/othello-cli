@@ -1,5 +1,5 @@
 [package]
-name = "othello"
+name = "othello-cli"
 version = "1.0.0"
 edition = "2021"
 authors = ["LelsersLasers <millankumar@gmail.com>"]
