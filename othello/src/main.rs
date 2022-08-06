@@ -1,5 +1,5 @@
-use std::io::prelude::*;
 use rand::seq::SliceRandom;
+use std::io::prelude::*;
 
 #[derive(Copy, Clone, PartialEq)]
 enum Spot {
@@ -37,7 +37,13 @@ fn create_board() -> [[Spot; 8]; 8] {
     board
 }
 
-fn print_game(board: [[Spot; 8]; 8], valid_moves: [[bool; 8]; 8], valid_moves_vec: Vec<[usize; 2]>, current_turn: Spot, skip_turn: bool) {
+fn print_game(
+    board: [[Spot; 8]; 8],
+    valid_moves: [[bool; 8]; 8],
+    valid_moves_vec: Vec<[usize; 2]>,
+    current_turn: Spot,
+    skip_turn: bool,
+) {
     clear_screen();
 
     println!("\n   | 1 2 3 4 5 6 7 8 |");
@@ -62,7 +68,10 @@ fn print_game(board: [[Spot; 8]; 8], valid_moves: [[bool; 8]; 8], valid_moves_ve
     if current_turn != Spot::Empty {
         println!("Current turn: {}", current_turn.to_string());
         if skip_turn {
-            println!("({}'s turn was skipped because they had no valid moves)", current_turn.get_flip().to_string());
+            println!(
+                "({}'s turn was skipped because they had no valid moves)",
+                current_turn.get_flip().to_string()
+            );
         }
         print!("Valid moves: ");
         for (i, pos) in valid_moves_vec.iter().enumerate() {
@@ -70,7 +79,7 @@ fn print_game(board: [[Spot; 8]; 8], valid_moves: [[bool; 8]; 8], valid_moves_ve
             if i != valid_moves_vec.len() - 1 {
                 print!(", ");
             } else {
-                println!("");
+                println!();
             }
         }
     } else {
@@ -81,12 +90,10 @@ fn print_game(board: [[Spot; 8]; 8], valid_moves: [[bool; 8]; 8], valid_moves_ve
 fn end_game(board: [[Spot; 8]; 8]) {
     print_game(board, [[false; 8]; 8], vec![], Spot::Empty, false);
     let (black_total, white_total) = count_pieces(board);
-    if black_total > white_total {
-        println!("\n\nX's win!\n");
-    } else if white_total > black_total {
-        println!("\n\nO's win!\n");
-    } else {
-        println!("\n\nTie!\n");
+    match black_total {
+        x if x > white_total => println!("\n\nX wins!\n"),
+        x if x < white_total => println!("\n\nO wins!\n"),
+        _ => println!("\n\nIt's a tie!\n"),
     }
 }
 
@@ -140,21 +147,21 @@ fn get_input(valid_moves: [[bool; 8]; 8]) -> [usize; 2] {
     }
 }
 
-fn ai_input(valid_moves: [[bool; 8]; 8]) -> [usize; 2] {
-     // randomly moves
-    std::thread::sleep(std::time::Duration::from_millis(600)); // wait 0.6 sec
+fn ai_input(valid_moves: [[bool; 8]; 8], wait_time: u64) -> [usize; 2] {
+    // randomly moves
+    std::thread::sleep(std::time::Duration::from_millis(wait_time)); // wait 0.6 sec
     let valid_moves_vec = valid_moves_to_vec(valid_moves);
     let choice = valid_moves_vec.choose(&mut rand::thread_rng());
     match choice {
         Some(choice) => *choice,
-        None => invalid_move(valid_moves, "No valid moves"),
+        None => unreachable!(),
     }
 }
 
 fn find_valid_moves(board: [[Spot; 8]; 8], current_turn: Spot) -> [[bool; 8]; 8] {
     let mut valid_moves = [[false; 8]; 8];
-    for y in 0..8 {
-        for x in 0..8 {
+    for x in 0..8 {
+        for y in 0..8 {
             if valid_move(board, [x, y], current_turn) {
                 valid_moves[x][y] = true;
             }
@@ -265,48 +272,68 @@ fn count_pieces(board: [[Spot; 8]; 8]) -> (u32, u32) {
     (black_total, white_total)
 }
 
-fn get_is_ai(player: Spot) -> bool {
-    print!("Should {} be controlled by the computer (Y/n)? ", player.to_string());
-    std::io::stdout().flush().unwrap();
+fn read_cli_options() -> (bool, bool, u64) {
+    let args: Vec<String> = std::env::args().map(|s| s.to_lowercase()).collect();
+    let mut black_is_ai = true;
+    let mut white_is_ai = true;
+    let mut ai_wait_time = 750;
 
-    let mut input = String::new();
-    std::io::stdin()
-        .read_line(&mut input)
-        .expect("Failed to read line");
-
-    let choice = input.chars().next();
-    match choice {
-        Some('n') | Some('N') => false,
-        _ => true,
+    for arg in args.iter() {
+        if arg == "h" || arg == "help" {
+            println!("Usage: {} [options]", args[0]);
+            println!("Options:");
+            println!("  h, help\t\tShow this help message");
+            println!("  b, black\t\tSet black to be controlled by the user");
+            println!("  w, white\t\tSet white to be controlled by the user");
+            println!("  t, time\t\tSet the time (in milliseconds) the AI waits before making a move (default: 750 ms)");
+            std::process::exit(0);
+        } else if arg == "b" || arg == "black" {
+            black_is_ai = false;
+        } else if arg == "w" || arg == "white" {
+            white_is_ai = false;
+        } else if arg == "t" || arg == "time" {
+            let time = args[args.iter().position(|s| s == arg).unwrap() + 1]
+                .parse::<u64>()
+                .unwrap();
+            ai_wait_time = time;
+        }
     }
+
+    (black_is_ai, white_is_ai, ai_wait_time)
 }
 
 fn main() {
     let mut board = create_board();
     let mut current_turn = Spot::Black;
 
-    let black_is_ai = get_is_ai(Spot::Black);
-    let white_is_ai = get_is_ai(Spot::White);
+    let (black_is_ai, white_is_ai, ai_wait_time) = read_cli_options();
 
     loop {
-
         let mut valid_moves_current = find_valid_moves(board, current_turn);
         let mut valid_moves_current_vec = valid_moves_to_vec(valid_moves_current);
         let valid_moves_opp = find_valid_moves(board, current_turn.get_flip());
         let valid_moves_opp_vec = valid_moves_to_vec(valid_moves_opp);
-        if valid_moves_current_vec.len() == 0 && valid_moves_opp_vec.len() == 0 {
+        if valid_moves_current_vec.is_empty() && valid_moves_opp_vec.is_empty() {
             break;
         }
-        let skip_turn = valid_moves_current_vec.len() == 0;
+        let skip_turn = valid_moves_current_vec.is_empty();
         if skip_turn {
             current_turn = current_turn.get_flip();
             valid_moves_current = valid_moves_opp;
             valid_moves_current_vec = valid_moves_opp_vec;
         }
 
-        print_game(board, valid_moves_current, valid_moves_current_vec, current_turn, skip_turn);
-        let input = if (current_turn == Spot::Black && black_is_ai) || (current_turn == Spot::White && white_is_ai) {
-            ai_input(valid_moves_current)
+        print_game(
+            board,
+            valid_moves_current,
+            valid_moves_current_vec,
+            current_turn,
+            skip_turn,
+        );
+        let input = if (current_turn == Spot::Black && black_is_ai)
+            || (current_turn == Spot::White && white_is_ai)
+        {
+            ai_input(valid_moves_current, ai_wait_time)
         } else {
             get_input(valid_moves_current)
         };
