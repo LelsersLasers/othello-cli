@@ -16,7 +16,7 @@ version = "1.0.0"
 authors = ["LelsersLasers <millankumar@gmail.com>"]
 description = "Play or watch Othello in your terminal"
 homepage = "https://github.com/LelsersLasers/Othello"
-readme = "README.md"
+readme = "../README.md"
 keywords = [
     "Othello",
     "Reversi",
