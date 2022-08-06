@@ -1,5 +1,5 @@
 # Othello
-Play or watch Othello in your terminal
+Play or watch Othello in your terminal!
 
 ![Showcase Image](https://github.com/LelsersLasers/Othello/raw/main/Showcase/Showcase.PNG)
 
