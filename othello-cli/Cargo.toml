@@ -8,8 +8,8 @@ license = "MIT"
 readme = "../README.md"
 repository = "https://github.com/LelsersLasers/othello-cli"
 homepage = "https://github.com/LelsersLasers/othello-cli"
-keywords = ["Othello", "Reversi", "game", "terminal", "cli"]
-categories = ["game", "command-line-utilities"]
+keywords = ["Othello", "Reversi", "games", "terminal", "cli"]
+categories = ["games", "command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
