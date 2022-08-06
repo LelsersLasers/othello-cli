@@ -1,5 +1,6 @@
 use rand::seq::SliceRandom;
 use std::io::prelude::*;
+use colored::Colorize;
 
 #[derive(Copy, Clone, PartialEq)]
 enum Spot {
@@ -8,11 +9,11 @@ enum Spot {
     White,
 }
 impl Spot {
-    fn to_string(self) -> &'static str {
+    fn to_string(self) -> colored::ColoredString {
         match self {
-            Spot::Black => "X",
-            Spot::White => "O",
-            Spot::Empty => " ",
+            Spot::Black => "X".green(),
+            Spot::White => "O".red(),
+            Spot::Empty => " ".clear(),
         }
     }
     fn get_flip(self) -> Spot {
@@ -52,7 +53,7 @@ fn print_game(
         // I think 0..8 is cleaner, but clippy wants this
         for (x, _item) in board.iter().enumerate() {
             if valid_moves.contains(&[x, y]) {
-                print!(". ");
+                print!("{} ", format!(".").cyan());
             } else {
                 print!("{} ", board[x][y].to_string());
             }
