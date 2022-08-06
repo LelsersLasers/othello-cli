@@ -39,8 +39,7 @@ fn create_board() -> [[Spot; 8]; 8] {
 
 fn print_game(
     board: [[Spot; 8]; 8],
-    valid_moves: [[bool; 8]; 8],
-    valid_moves_vec: Vec<[usize; 2]>,
+    valid_moves: &[[usize; 2]],
     current_turn: Spot,
     skip_turn: bool,
 ) {
@@ -50,8 +49,9 @@ fn print_game(
     println!(" --+-----------------+");
     for y in 0..8 {
         print!(" {} | ", y + 1);
-        for x in 0..8 {
-            if valid_moves[x][y] {
+        // I think 0..8 is cleaner, but clippy wants this
+        for (x, _item) in board.iter().enumerate() {
+            if valid_moves.contains(&[x, y]) {
                 print!(". ");
             } else {
                 print!("{} ", board[x][y].to_string());
@@ -74,9 +74,9 @@ fn print_game(
             );
         }
         print!("Valid moves: ");
-        for (i, pos) in valid_moves_vec.iter().enumerate() {
+        for (i, pos) in valid_moves.iter().enumerate() {
             print!("'{} {}'", pos[0] + 1, pos[1] + 1);
-            if i != valid_moves_vec.len() - 1 {
+            if i != valid_moves.len() - 1 {
                 print!(", ");
             } else {
                 println!();
@@ -88,7 +88,7 @@ fn print_game(
 }
 
 fn end_game(board: [[Spot; 8]; 8]) {
-    print_game(board, [[false; 8]; 8], vec![], Spot::Empty, false);
+    print_game(board, &Vec::new(), Spot::Empty, false);
     let (black_total, white_total) = count_pieces(board);
     match black_total {
         x if x > white_total => println!("\n\nX wins!\n"),
@@ -97,12 +97,12 @@ fn end_game(board: [[Spot; 8]; 8]) {
     }
 }
 
-fn invalid_move(valid_moves: [[bool; 8]; 8], message: &'static str) -> [usize; 2] {
+fn invalid_move(valid_moves: &Vec<[usize; 2]>, message: &'static str) -> [usize; 2] {
     println!("{}", message);
     get_input(valid_moves)
 }
 
-fn get_input(valid_moves: [[bool; 8]; 8]) -> [usize; 2] {
+fn get_input(valid_moves: &Vec<[usize; 2]>) -> [usize; 2] {
     print!("Choose where to place piece: ");
     std::io::stdout().flush().unwrap();
 
@@ -140,46 +140,33 @@ fn get_input(valid_moves: [[bool; 8]; 8]) -> [usize; 2] {
             valid_moves,
             "Incorrectly formatted input (entered less than 2 numbers?)",
         )
-    } else if !valid_moves[pos[0]][pos[1]] {
+    } else if !valid_moves.contains(&pos) {
         invalid_move(valid_moves, "You cannot move there")
     } else {
         pos
     }
 }
 
-fn ai_input(valid_moves: [[bool; 8]; 8], wait_time: u64) -> [usize; 2] {
+fn ai_input(valid_moves: &Vec<[usize; 2]>, wait_time: u64) -> [usize; 2] {
     // randomly moves
     std::thread::sleep(std::time::Duration::from_millis(wait_time)); // wait 0.6 sec
-    let valid_moves_vec = valid_moves_to_vec(valid_moves);
-    let choice = valid_moves_vec.choose(&mut rand::thread_rng());
+    let choice = valid_moves.choose(&mut rand::thread_rng());
     match choice {
         Some(choice) => *choice,
         None => unreachable!(),
     }
 }
 
-fn find_valid_moves(board: [[Spot; 8]; 8], current_turn: Spot) -> [[bool; 8]; 8] {
-    let mut valid_moves = [[false; 8]; 8];
+fn find_valid_moves(board: [[Spot; 8]; 8], current_turn: Spot) -> Vec<[usize; 2]> {
+    let mut valid_moves: Vec<[usize; 2]> = vec![];
     for x in 0..8 {
         for y in 0..8 {
             if valid_move(board, [x, y], current_turn) {
-                valid_moves[x][y] = true;
+                valid_moves.push([x, y]);
             }
         }
     }
     valid_moves
-}
-
-fn valid_moves_to_vec(valid_moves: [[bool; 8]; 8]) -> Vec<[usize; 2]> {
-    let mut valid_moves_vec: Vec<[usize; 2]> = vec![];
-    for y in 0..8 {
-        for x in 0..8 {
-            if valid_moves[x][y] {
-                valid_moves_vec.push([x, y]);
-            }
-        }
-    }
-    valid_moves_vec
 }
 
 fn valid_move(board: [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) -> bool {
@@ -310,32 +297,23 @@ fn main() {
 
     loop {
         let mut valid_moves_current = find_valid_moves(board, current_turn);
-        let mut valid_moves_current_vec = valid_moves_to_vec(valid_moves_current);
         let valid_moves_opp = find_valid_moves(board, current_turn.get_flip());
-        let valid_moves_opp_vec = valid_moves_to_vec(valid_moves_opp);
-        if valid_moves_current_vec.is_empty() && valid_moves_opp_vec.is_empty() {
+        if valid_moves_current.is_empty() && valid_moves_opp.is_empty() {
             break;
         }
-        let skip_turn = valid_moves_current_vec.is_empty();
+        let skip_turn = valid_moves_current.is_empty();
         if skip_turn {
             current_turn = current_turn.get_flip();
             valid_moves_current = valid_moves_opp;
-            valid_moves_current_vec = valid_moves_opp_vec;
         }
 
-        print_game(
-            board,
-            valid_moves_current,
-            valid_moves_current_vec,
-            current_turn,
-            skip_turn,
-        );
+        print_game(board, &valid_moves_current, current_turn, skip_turn);
         let input = if (current_turn == Spot::Black && black_is_ai)
             || (current_turn == Spot::White && white_is_ai)
         {
-            ai_input(valid_moves_current, ai_wait_time)
+            ai_input(&valid_moves_current, ai_wait_time)
         } else {
-            get_input(valid_moves_current)
+            get_input(&valid_moves_current)
         };
         place_piece(&mut board, input, current_turn);
 
