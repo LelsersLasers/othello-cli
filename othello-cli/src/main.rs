@@ -87,7 +87,7 @@ fn print_game(
     println!("O's: {}", white_total);
 
     if current_turn != Spot::Empty {
-        println!("Current turn: {}", current_turn.to_string());
+        println!("Current turn: {}", current_turn.get_false().to_string());
         if skip_turn {
             println!(
                 "({}'s turn was skipped because they had no valid moves)",
@@ -273,7 +273,7 @@ fn place_piece(board: &mut [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) 
             for i in 1..dist {
                 let x = pos[0] as i32 + dir[0] * i;
                 let y = pos[1] as i32 + dir[1] * i;
-                board[x as usize][y as usize] = current_turn.get_false();
+                board[x as usize][y as usize] = current_turn;
             }
         }
     }
