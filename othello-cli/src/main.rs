@@ -5,21 +5,41 @@ use std::io::prelude::*;
 #[derive(Copy, Clone, PartialEq)]
 enum Spot {
     Empty,
-    Black,
-    White,
+    Black(bool),
+    White(bool),
 }
 impl Spot {
     fn to_string(self) -> colored::ColoredString {
         match self {
-            Spot::Black => "X".green(),
-            Spot::White => "O".red(),
+            Spot::Black(last_move) => match last_move {
+                true => "X".italic().bold().bright_green(),
+                false => "X".green(),
+            },
+            Spot::White(last_move) => match last_move {
+                true => "O".italic().bold().bright_red(),
+                false => "O".red(),
+            },
             Spot::Empty => " ".clear(),
         }
     }
     fn get_flip(self) -> Spot {
         match self {
-            Spot::Black => Spot::White,
-            Spot::White => Spot::Black,
+            Spot::Black(last_move) => Spot::White(last_move),
+            Spot::White(last_move) => Spot::Black(last_move),
+            Spot::Empty => Spot::Empty,
+        }
+    }
+    fn get_true(self) -> Spot {
+        match self {
+            Spot::Black(_) => Spot::Black(true),
+            Spot::White(_) => Spot::White(true),
+            Spot::Empty => Spot::Empty,
+        }
+    }
+    fn get_false(self) -> Spot {
+        match self {
+            Spot::Black(_) => Spot::Black(false),
+            Spot::White(_) => Spot::White(false),
             Spot::Empty => Spot::Empty,
         }
     }
@@ -31,10 +51,10 @@ fn clear_screen() {
 
 fn create_board() -> [[Spot; 8]; 8] {
     let mut board = [[Spot::Empty; 8]; 8];
-    board[3][3] = Spot::White;
-    board[3][4] = Spot::Black;
-    board[4][3] = Spot::Black;
-    board[4][4] = Spot::White;
+    board[3][3] = Spot::White(false);
+    board[3][4] = Spot::Black(false);
+    board[4][3] = Spot::Black(false);
+    board[4][4] = Spot::White(false);
     board
 }
 
@@ -97,9 +117,9 @@ fn end_game(board: [[Spot; 8]; 8]) {
         println!(
             "\n\n{}'s wins!\n",
             if black_total > white_total {
-                Spot::Black.to_string()
+                Spot::Black(false).to_string()
             } else {
-                Spot::White.to_string()
+                Spot::White(false).to_string()
             }
         );
     }
@@ -200,10 +220,11 @@ fn valid_move(board: [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) -> boo
             if !(0..=7).contains(&x)
                 || !(0..=7).contains(&y)
                 || board[x as usize][y as usize] == Spot::Empty
-                || (dist == 1 && board[x as usize][y as usize] != current_turn.get_flip())
+                || (dist == 1
+                    && board[x as usize][y as usize].get_true() != current_turn.get_flip())
             {
                 break;
-            } else if board[x as usize][y as usize] == current_turn {
+            } else if board[x as usize][y as usize].get_true() == current_turn {
                 return true;
             }
             dist += 1;
@@ -214,6 +235,11 @@ fn valid_move(board: [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) -> boo
 
 fn place_piece(board: &mut [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) {
     // assumes valid move
+    for x in 0..8 {
+        for y in 0..8 {
+            board[x][y] = board[x][y].get_false();
+        }
+    }
     board[pos[0]][pos[1]] = current_turn;
     let dirs = [
         [-1, -1],
@@ -233,10 +259,11 @@ fn place_piece(board: &mut [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) 
             let y = pos[1] as i32 + dir[1] * dist;
             if !(0..=7).contains(&x)
                 || !(0..=7).contains(&y)
-                || (dist == 1 && board[x as usize][y as usize] != current_turn.get_flip())
+                || (dist == 1
+                    && board[x as usize][y as usize].get_true() != current_turn.get_flip())
             {
                 break;
-            } else if board[x as usize][y as usize] == current_turn {
+            } else if board[x as usize][y as usize].get_true() == current_turn {
                 found = true;
                 break;
             }
@@ -246,7 +273,7 @@ fn place_piece(board: &mut [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) 
             for i in 1..dist {
                 let x = pos[0] as i32 + dir[0] * i;
                 let y = pos[1] as i32 + dir[1] * i;
-                board[x as usize][y as usize] = current_turn;
+                board[x as usize][y as usize] = current_turn.get_false();
             }
         }
     }
@@ -258,8 +285,8 @@ fn count_pieces(board: [[Spot; 8]; 8]) -> (u32, u32) {
     for row in board.iter() {
         for spot in row.iter() {
             match spot {
-                Spot::Black => black_total += 1,
-                Spot::White => white_total += 1,
+                Spot::Black(_last_move) => black_total += 1,
+                Spot::White(_last_move) => white_total += 1,
                 _ => (),
             }
         }
@@ -299,7 +326,7 @@ fn read_cli_options() -> (bool, bool, u64) {
 
 fn main() {
     let mut board = create_board();
-    let mut current_turn = Spot::Black;
+    let mut current_turn = Spot::Black(true);
 
     let (black_is_ai, white_is_ai, ai_wait_time) = read_cli_options();
 
@@ -316,8 +343,8 @@ fn main() {
         }
 
         print_game(board, &valid_moves_current, current_turn, skip_turn);
-        let input = if (current_turn == Spot::Black && black_is_ai)
-            || (current_turn == Spot::White && white_is_ai)
+        let input = if (current_turn == Spot::Black(true) && black_is_ai)
+            || (current_turn == Spot::White(true) && white_is_ai)
         {
             ai_input(&valid_moves_current, ai_wait_time)
         } else {

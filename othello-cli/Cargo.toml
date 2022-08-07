@@ -1,6 +1,6 @@
 [package]
 name = "othello-cli"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 authors = ["LelsersLasers <millankumar@gmail.com>"]
 description = "Play or watch Othello in your terminal!"
@@ -8,7 +8,7 @@ license = "MIT"
 readme = "../README.md"
 repository = "https://github.com/LelsersLasers/othello-cli"
 homepage = "https://github.com/LelsersLasers/othello-cli"
-keywords = ["Othello", "Reversi", "games", "terminal", "cli"]
+keywords = ["Othello", "Reversi", "game", "terminal", "cli"]
 categories = ["games", "command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
