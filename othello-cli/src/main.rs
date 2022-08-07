@@ -305,8 +305,8 @@ fn read_cli_options() -> (bool, bool, u64) {
             println!("Usage: {} [options]", args[0]);
             println!("Options:");
             println!("  h, help\t\tShow this help message");
-            println!("  b, black\t\tSet black to be controlled by the user");
-            println!("  w, white\t\tSet white to be controlled by the user");
+            println!("  b, black\t\tSet black (X's) to be controlled by the user");
+            println!("  w, white\t\tSet white (O's) to be controlled by the user");
             println!("  t, time\t\tSet the time (in milliseconds) the AI waits before making a move (default: 750 ms)");
             std::process::exit(0);
         } else if arg == "b" || arg == "black" {
