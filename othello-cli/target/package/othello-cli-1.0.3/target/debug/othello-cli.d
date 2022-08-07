@@ -1,0 +1,1 @@
+C:\Users\milla\Desktop\coding\othello-cli\othello-cli\target\package\othello-cli-1.0.3\target\debug\othello-cli.exe: C:\Users\milla\Desktop\coding\othello-cli\othello-cli\target\package\othello-cli-1.0.3\src\main.rs
