@@ -1,8 +1,6 @@
 # Todo
 
 - 1.X:
-    - Character flags
-        - 'black-char' and 'white-char' flags
     - Update Readme
     - Clean code
 - 2.0:

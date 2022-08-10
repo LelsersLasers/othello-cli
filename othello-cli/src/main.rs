@@ -13,26 +13,28 @@ impl Spot {
         self,
         black_color: Option<[u8; 3]>,
         white_color: Option<[u8; 3]>,
+        black_piece: char,
+        white_piece: char,
     ) -> colored::ColoredString {
         match self {
             Spot::Black(last_move) => match black_color {
                 Some(color) => match last_move {
-                    true => "X".italic().bold().truecolor(color[0], color[1], color[2]),
-                    false => "X".truecolor(color[0], color[1], color[2]),
+                    true => black_piece.to_string().italic().bold().truecolor(color[0], color[1], color[2]),
+                    false => black_piece.to_string().truecolor(color[0], color[1], color[2]),
                 },
                 None => match last_move {
-                    true => "X".italic().bold().green(),
-                    false => "X".green(),
+                    true => black_piece.to_string().italic().bold().green(),
+                    false => black_piece.to_string().green(),
                 },
             },
             Spot::White(last_move) => match white_color {
                 Some(color) => match last_move {
-                    true => "O".italic().bold().truecolor(color[0], color[1], color[2]),
-                    false => "O".truecolor(color[0], color[1], color[2]),
+                    true => white_piece.to_string().italic().bold().truecolor(color[0], color[1], color[2]),
+                    false => white_piece.to_string().truecolor(color[0], color[1], color[2]),
                 },
                 None => match last_move {
-                    true => "O".italic().bold().red(),
-                    false => "O".red(),
+                    true => white_piece.to_string().italic().bold().red(),
+                    false => white_piece.to_string().red(),
                 },
             },
             Spot::Empty => " ".clear(),
@@ -82,6 +84,8 @@ fn print_game(
     black_color: Option<[u8; 3]>,
     white_color: Option<[u8; 3]>,
     marked_color: Option<[u8; 3]>,
+    black_piece: char,
+    white_piece: char,
 ) {
     clear_screen();
 
@@ -101,7 +105,7 @@ fn print_game(
                     }
                 }
             } else {
-                print!("{} ", board[x][y].to_string(black_color, white_color));
+                print!("{} ", board[x][y].to_string(black_color, white_color, black_piece, white_piece));
             }
         }
         println!("|");
@@ -109,18 +113,18 @@ fn print_game(
     println!("   +-----------------+");
 
     let (black_total, white_total) = count_pieces(board);
-    println!("X's: {}", black_total);
-    println!("O's: {}", white_total);
+    println!("{}'s: {}", black_piece, black_total);
+    println!("{}'s: {}", white_piece, white_total);
 
     if current_turn != Spot::Empty {
         println!(
             "Current turn: {}",
-            current_turn.get_false().to_string(black_color, white_color)
+            current_turn.get_false().to_string(black_color, white_color, black_piece, white_piece)
         );
         if skip_turn {
             println!(
                 "({}'s turn was skipped because they had no valid moves)",
-                current_turn.get_flip().to_string(black_color, white_color)
+                current_turn.get_flip().to_string(black_color, white_color, black_piece, white_piece)
             );
         }
         print!("Valid moves: ");
@@ -143,6 +147,8 @@ fn end_game(
     black_color: Option<[u8; 3]>,
     white_color: Option<[u8; 3]>,
     marked_color: Option<[u8; 3]>,
+    black_piece: char,
+    white_piece: char,
 ) {
     print_game(
         board,
@@ -152,6 +158,8 @@ fn end_game(
         black_color,
         white_color,
         marked_color,
+        black_piece,
+        white_piece,
     );
     let (black_total, white_total) = count_pieces(board);
     if black_total == white_total {
@@ -170,9 +178,9 @@ fn end_game(
         println!(
             "\n\n{}'s wins!\n",
             if black_total > white_total {
-                Spot::Black(false).to_string(black_color, white_color)
+                Spot::Black(false).to_string(black_color, white_color, black_piece, white_piece)
             } else {
-                Spot::White(false).to_string(black_color, white_color)
+                Spot::White(false).to_string(black_color, white_color, black_piece, white_piece)
             }
         );
     }
@@ -365,6 +373,8 @@ fn read_cli_options() -> (
     Option<[u8; 3]>,
     Option<[u8; 3]>,
     Option<[u8; 3]>,
+    char,
+    char,
     u64,
 ) {
     let args: Vec<String> = std::env::args().map(|s| s.to_lowercase()).collect();
@@ -373,6 +383,8 @@ fn read_cli_options() -> (
     let mut black_color = None;
     let mut white_color = None;
     let mut marked_color = None;
+    let mut black_piece = 'X';
+    let mut white_piece = 'O';
     let mut ai_wait_time = 750;
 
     for arg in args.iter() {
@@ -380,20 +392,28 @@ fn read_cli_options() -> (
             println!("Usage: {} [options]", args[0]);
             println!("Options:");
             println!("  h, help\t\tShow this help message");
-            println!("  b, black\t\tSet black (X's) to be controlled by the user");
-            println!("  w, white\t\tSet white (O's) to be controlled by the user");
-            println!("  bc, black-color\tSet the color of black (X's) to be a custom color");
+            println!("  b, black\t\tSet black to be controlled by the user");
+            println!("  w, white\t\tSet white to be controlled by the user");
+            println!("  bc, black-color\tSet the color of black to be a custom color");
             println!("\t\t\t  default: green");
-            println!("\t\t\t  format: 'othello-cli black-color r g b''");
+            println!("\t\t\t  format: 'othello-cli black-color r g b'");
             println!("\t\t\t  where r, g, and b are integers from 0-255");
-            println!("  wc, white-color\tSet the color of white (O's) to be a custom color");
+            println!("  wc, white-color\tSet the color of white to be a custom color");
             println!("\t\t\t  default: red");
-            println!("\t\t\t  format: 'othello-cli white-color r g b''");
+            println!("\t\t\t  format: 'othello-cli white-color r g b'");
             println!("\t\t\t  where r, g, and b are integers from 0-255");
             println!("  mc, marked-color\tSet the color of the valid moves to be a custom color");
             println!("\t\t\t  default: cyan");
-            println!("\t\t\t  format: 'othello-cli marked-color r g b''");
+            println!("\t\t\t  format: 'othello-cli marked-color r g b'");
             println!("\t\t\t  where r, g, and b are integers from 0-255");
+            println!("  bp, black-piece\tSet the piece for black to be a custom character");
+            println!("\t\t\t  default: X");
+            println!("\t\t\t  format: 'othello-cli black-piece c'");
+            println!("\t\t\t  where c is a single character");
+            println!("  wp, white-piece\tSet the piece for white to be a custom character");
+            println!("\t\t\t  default: O");
+            println!("\t\t\t  format: 'othello-cli white-piece c'");
+            println!("\t\t\t  where c is a single character");
             println!("  t, time\t\tSet the milliseconds the AI waits before making a move");
             println!("\t\t\t  default: 750 ms");
             println!("\t\t\t  format: 'othello-cli time ms'");
@@ -454,6 +474,20 @@ fn read_cli_options() -> (
                 args[r_idx + 1].parse::<u8>().unwrap(),
                 args[r_idx + 2].parse::<u8>().unwrap(),
             ]);
+        } else if arg == "bp" || arg == "black-piece" {
+            let c_idx = args.iter().position(|s| s == arg).unwrap() + 1;
+            if c_idx >= args.len() || args[c_idx].len() != 1 {
+                println!("Invalid piece");
+                std::process::exit(1);
+            }
+            black_piece = args[c_idx].chars().next().unwrap();
+        } else if arg == "wp" || arg == "white-piece" {
+            let c_idx = args.iter().position(|s| s == arg).unwrap() + 1;
+            if c_idx >= args.len() || args[c_idx].len() != 1 {
+                println!("Invalid piece");
+                std::process::exit(1);
+            }
+            white_piece = args[c_idx].chars().next().unwrap();
         } else if arg == "t" || arg == "time" {
             let ms_idx = args.iter().position(|s| s == arg).unwrap() + 1;
             if ms_idx >= args.len() || args[ms_idx].parse::<u64>().is_err() {
@@ -470,6 +504,8 @@ fn read_cli_options() -> (
         black_color,
         white_color,
         marked_color,
+        black_piece,
+        white_piece,
         ai_wait_time,
     )
 }
@@ -478,7 +514,7 @@ fn main() {
     let mut board = create_board();
     let mut current_turn = Spot::Black(true);
 
-    let (black_is_ai, white_is_ai, black_color, white_color, marked_color, ai_wait_time) =
+    let (black_is_ai, white_is_ai, black_color, white_color, marked_color, black_piece, white_piece, ai_wait_time) =
         read_cli_options();
 
     loop {
@@ -501,6 +537,8 @@ fn main() {
             black_color,
             white_color,
             marked_color,
+            black_piece,
+            white_piece,
         );
         let input = if (current_turn == Spot::Black(true) && black_is_ai)
             || (current_turn == Spot::White(true) && white_is_ai)
@@ -513,5 +551,5 @@ fn main() {
 
         current_turn = current_turn.get_flip();
     }
-    end_game(board, black_color, white_color, marked_color);
+    end_game(board, black_color, white_color, marked_color, black_piece, white_piece);
 }
