@@ -9,7 +9,11 @@ enum Spot {
     White(bool),
 }
 impl Spot {
-    fn to_string(self, black_color: Option<[u8; 3]>, white_color: Option<[u8; 3]>) -> colored::ColoredString {
+    fn to_string(
+        self,
+        black_color: Option<[u8; 3]>,
+        white_color: Option<[u8; 3]>,
+    ) -> colored::ColoredString {
         match self {
             Spot::Black(last_move) => match black_color {
                 Some(color) => match last_move {
@@ -101,7 +105,10 @@ fn print_game(
     println!("O's: {}", white_total);
 
     if current_turn != Spot::Empty {
-        println!("Current turn: {}", current_turn.get_false().to_string(black_color, white_color));
+        println!(
+            "Current turn: {}",
+            current_turn.get_false().to_string(black_color, white_color)
+        );
         if skip_turn {
             println!(
                 "({}'s turn was skipped because they had no valid moves)",
@@ -124,7 +131,14 @@ fn print_game(
 }
 
 fn end_game(board: [[Spot; 8]; 8], black_color: Option<[u8; 3]>, white_color: Option<[u8; 3]>) {
-    print_game(board, &Vec::new(), Spot::Empty, false, black_color, white_color);
+    print_game(
+        board,
+        &Vec::new(),
+        Spot::Empty,
+        false,
+        black_color,
+        white_color,
+    );
     let (black_total, white_total) = count_pieces(board);
     if black_total == white_total {
         println!("\n\nIt's a {}!\n", "tie".cyan());
@@ -157,29 +171,42 @@ fn get_input(valid_moves: &Vec<[usize; 2]>) -> [usize; 2] {
 
     let mut pos: [usize; 2] = [0; 2];
 
-
     if input_str.len() != 2 {
-        return invalid_move(valid_moves, "Incorrectly formatted input (format input like: 'd3')");
+        return invalid_move(
+            valid_moves,
+            "Incorrectly formatted input (format input like: 'd3')",
+        );
     }
-    
+
     let valid_letters = "abcdefgh";
-    let letter = input_str.chars().nth(0).unwrap();
+    let letter = input_str.chars().next().unwrap();
     if !valid_letters.contains(letter) {
-        return invalid_move(valid_moves, "Incorrectly formatted input (enter only letters A-H)");
+        return invalid_move(
+            valid_moves,
+            "Incorrectly formatted input (enter only letters A-H)",
+        );
     }
     pos[0] = valid_letters.find(letter).unwrap();
 
     let num = input_str.chars().nth(1).unwrap().to_digit(10);
     match num {
-        Some(n) => {
-            match n {
-                1..=8 => {
-                    pos[1] = n as usize - 1;
-                }
-                _ => return invalid_move(valid_moves, "Incorrectly formatted input (enter numbers 1-8)"),
+        Some(n) => match n {
+            1..=8 => {
+                pos[1] = n as usize - 1;
             }
+            _ => {
+                return invalid_move(
+                    valid_moves,
+                    "Incorrectly formatted input (enter numbers 1-8)",
+                )
+            }
+        },
+        None => {
+            return invalid_move(
+                valid_moves,
+                "Incorrectly formatted input (enter numbers 1-8)",
+            )
         }
-        None => return invalid_move(valid_moves, "Incorrectly formatted input (enter numbers 1-8)"),
     }
 
     if !valid_moves.contains(&pos) {
@@ -331,7 +358,7 @@ fn read_cli_options() -> (bool, bool, Option<[u8; 3]>, Option<[u8; 3]>, u64) {
             println!("\t\t\t  default: red");
             println!("\t\t\t  format: 'othello-cli white-color r g b''");
             println!("\t\t\t  where r, g, and b are integers from 0-255");
-            println!("  t, time\t\tSet the time (in milliseconds) the AI waits before making a move");
+            println!("  t, time\t\tSet the milliseconds the AI waits before making a move");
             println!("\t\t\t  default: 750 ms");
             println!("\t\t\t  format: 'othello-cli time ms'");
             println!("\t\t\t  where ms is a positive integer");
@@ -357,7 +384,6 @@ fn read_cli_options() -> (bool, bool, Option<[u8; 3]>, Option<[u8; 3]>, u64) {
                 args[r_idx + 1].parse::<u8>().unwrap(),
                 args[r_idx + 2].parse::<u8>().unwrap(),
             ]);
-
         } else if arg == "wc" || arg == "white-color" {
             let r_idx = args.iter().position(|s| s == arg).unwrap() + 1;
             if r_idx >= args.len()
@@ -385,7 +411,13 @@ fn read_cli_options() -> (bool, bool, Option<[u8; 3]>, Option<[u8; 3]>, u64) {
         }
     }
 
-    (black_is_ai, white_is_ai, black_color, white_color, ai_wait_time)
+    (
+        black_is_ai,
+        white_is_ai,
+        black_color,
+        white_color,
+        ai_wait_time,
+    )
 }
 
 fn main() {
@@ -406,7 +438,14 @@ fn main() {
             valid_moves_current = valid_moves_opp;
         }
 
-        print_game(board, &valid_moves_current, current_turn, skip_turn, black_color, white_color);
+        print_game(
+            board,
+            &valid_moves_current,
+            current_turn,
+            skip_turn,
+            black_color,
+            white_color,
+        );
         let input = if (current_turn == Spot::Black(true) && black_is_ai)
             || (current_turn == Spot::White(true) && white_is_ai)
         {

@@ -4,6 +4,7 @@
     - Color flag for valid move spot
     - Character flags
         - 'black-char' and 'white-char' flags
+    - Update Readme
 - 2.0:
     - Rewrite code
     - Functional programming
