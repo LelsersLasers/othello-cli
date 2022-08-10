@@ -314,10 +314,19 @@ fn read_cli_options() -> (bool, bool, u64) {
         } else if arg == "w" || arg == "white" {
             white_is_ai = false;
         } else if arg == "t" || arg == "time" {
-            let time = args[args.iter().position(|s| s == arg).unwrap() + 1]
-                .parse::<u64>()
-                .unwrap();
-            ai_wait_time = time;
+            let time_idx = args.iter().position(|s| s == arg).unwrap() + 1;
+            if time_idx >= args.len() {
+                println!("Error: No time specified");
+                std::process::exit(1);
+            }
+            let time = args[time_idx].parse::<u64>();
+            match time {
+                Ok(t) => ai_wait_time = t,
+                Err(_) => {
+                    println!("Error: Invalid time (not entered/not a number/not positive)");
+                    std::process::exit(1);
+                }
+            }
         }
     }
 
