@@ -66,7 +66,7 @@ fn print_game(
 ) {
     clear_screen();
 
-    println!("\n   | 1 2 3 4 5 6 7 8 |");
+    println!("\n   | A B C D E F G H |");
     println!(" --+-----------------+");
     for y in 0..8 {
         print!(" {} | ", y + 1);
@@ -96,7 +96,8 @@ fn print_game(
         }
         print!("Valid moves: ");
         for (i, pos) in valid_moves.iter().enumerate() {
-            print!("'{} {}'", pos[0] + 1, pos[1] + 1);
+            let mut letters = "abcdefgh".chars();
+            print!("{}{}", letters.nth(pos[0]).unwrap(), pos[1] + 1);
             if i != valid_moves.len() - 1 {
                 print!(", ");
             } else {
@@ -138,37 +139,36 @@ fn get_input(valid_moves: &Vec<[usize; 2]>) -> [usize; 2] {
     std::io::stdin()
         .read_line(&mut input)
         .expect("Failed to read line");
-    let string_parts = input.trim().split(' ');
+    let input_str = input.trim().to_lowercase();
 
-    let mut count = 0;
     let mut pos: [usize; 2] = [0; 2];
-    for c in string_parts {
-        if count >= 2 {
-            return invalid_move(
-                valid_moves,
-                "Incorrectly formatted input (entered more than 2 numbers?)",
-            );
-        } else if c.len() != 1 {
-            return invalid_move(valid_moves, "Enter numbers only between 1 and 8");
-        }
-        let num = c.parse::<usize>();
-        match num {
-            Ok(n) => {
-                if n > 8 {
-                    return invalid_move(valid_moves, "Enter numbers only between 1 and 8");
-                }
-                pos[count] = n - 1;
-            }
-            Err(_) => return invalid_move(valid_moves, "Enter numbers only between 1 and 8"),
-        }
-        count += 1;
+
+
+    if input_str.len() != 2 {
+        return invalid_move(valid_moves, "Incorrectly formatted input (format input like: 'd3')");
     }
-    if count != 2 {
-        invalid_move(
-            valid_moves,
-            "Incorrectly formatted input (entered less than 2 numbers?)",
-        )
-    } else if !valid_moves.contains(&pos) {
+    
+    let valid_letters = "abcdefgh";
+    let letter = input_str.chars().nth(0).unwrap();
+    if !valid_letters.contains(letter) {
+        return invalid_move(valid_moves, "Incorrectly formatted input (enter only letters A-H)");
+    }
+    pos[0] = valid_letters.find(letter).unwrap();
+
+    let num = input_str.chars().nth(1).unwrap().to_digit(10);
+    match num {
+        Some(n) => {
+            match n {
+                1..=8 => {
+                    pos[1] = n as usize - 1;
+                }
+                _ => return invalid_move(valid_moves, "Incorrectly formatted input (enter numbers 1-8)"),
+            }
+        }
+        None => return invalid_move(valid_moves, "Incorrectly formatted input (enter numbers 1-8)"),
+    }
+
+    if !valid_moves.contains(&pos) {
         invalid_move(valid_moves, "You cannot move there")
     } else {
         pos

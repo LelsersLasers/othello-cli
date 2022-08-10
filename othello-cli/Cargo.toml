@@ -1,6 +1,6 @@
 [package]
 name = "othello-cli"
-version = "1.0.3"
+version = "1.1.0"
 edition = "2021"
 authors = ["LelsersLasers <millankumar@gmail.com>"]
 description = "Play or watch Othello in your terminal!"

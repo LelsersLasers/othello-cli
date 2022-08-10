@@ -1,8 +1,6 @@
 # Todo
 
 - 1.X:
-    - Top row is A-8th letter
-        - input is now 'D3' (or 'd3') instead of '4 3'
     - Color flags
         - 'black-color' and 'white-color' flags
     - Character flags
