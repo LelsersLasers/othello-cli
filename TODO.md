@@ -1,8 +1,7 @@
 # Todo
 
 - 1.X:
-    - Color flags
-        - 'black-color' and 'white-color' flags
+    - Color flag for valid move spot
     - Character flags
         - 'black-char' and 'white-char' flags
 - 2.0:
