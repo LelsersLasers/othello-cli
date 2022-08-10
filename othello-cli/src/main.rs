@@ -95,7 +95,7 @@ fn print_game(
                 match marked_color {
                     Some(color) => {
                         print!("{} ", ".".truecolor(color[0], color[1], color[2]));
-                    },
+                    }
                     None => {
                         print!("{} ", ".".cyan());
                     }
@@ -138,7 +138,12 @@ fn print_game(
     }
 }
 
-fn end_game(board: [[Spot; 8]; 8], black_color: Option<[u8; 3]>, white_color: Option<[u8; 3]>, marked_color: Option<[u8; 3]>) {
+fn end_game(
+    board: [[Spot; 8]; 8],
+    black_color: Option<[u8; 3]>,
+    white_color: Option<[u8; 3]>,
+    marked_color: Option<[u8; 3]>,
+) {
     print_game(
         board,
         &Vec::new(),
@@ -150,7 +155,17 @@ fn end_game(board: [[Spot; 8]; 8], black_color: Option<[u8; 3]>, white_color: Op
     );
     let (black_total, white_total) = count_pieces(board);
     if black_total == white_total {
-        println!("\n\nIt's a {}!\n", "tie".cyan());
+        println!(
+            "\n\nIt's a {}!\n",
+            match marked_color {
+                Some(color) => {
+                    "tie".truecolor(color[0], color[1], color[2])
+                }
+                None => {
+                    "tie".cyan()
+                }
+            }
+        );
     } else {
         println!(
             "\n\n{}'s wins!\n",
@@ -344,7 +359,14 @@ fn count_pieces(board: [[Spot; 8]; 8]) -> (u32, u32) {
     (black_total, white_total)
 }
 
-fn read_cli_options() -> (bool, bool, Option<[u8; 3]>, Option<[u8; 3]>, Option<[u8; 3]>, u64) {
+fn read_cli_options() -> (
+    bool,
+    bool,
+    Option<[u8; 3]>,
+    Option<[u8; 3]>,
+    Option<[u8; 3]>,
+    u64,
+) {
     let args: Vec<String> = std::env::args().map(|s| s.to_lowercase()).collect();
     let mut black_is_ai = true;
     let mut white_is_ai = true;
@@ -456,7 +478,8 @@ fn main() {
     let mut board = create_board();
     let mut current_turn = Spot::Black(true);
 
-    let (black_is_ai, white_is_ai, black_color, white_color, marked_color, ai_wait_time) = read_cli_options();
+    let (black_is_ai, white_is_ai, black_color, white_color, marked_color, ai_wait_time) =
+        read_cli_options();
 
     loop {
         let mut valid_moves_current = find_valid_moves(board, current_turn);
