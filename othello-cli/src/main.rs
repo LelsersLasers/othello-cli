@@ -69,10 +69,6 @@ impl Spot {
     }
 }
 
-fn clear_screen() {
-    print!("\x1B[2J\x1B[1;1H");
-}
-
 fn create_board() -> [[Spot; 8]; 8] {
     let mut board = [[Spot::Empty; 8]; 8];
     board[3][3] = Spot::White(false);
@@ -82,6 +78,7 @@ fn create_board() -> [[Spot; 8]; 8] {
     board
 }
 
+// impure - printing
 fn print_game(
     board: [[Spot; 8]; 8],
     valid_moves: &[[usize; 2]],
@@ -90,7 +87,7 @@ fn print_game(
     colors: [Option<[u8; 3]>; 3],
     pieces: [char; 2],
 ) {
-    clear_screen();
+    print!("\x1B[2J\x1B[1;1H"); // clears screen
 
     println!("\n   | A B C D E F G H |");
     println!(" --+-----------------+");
@@ -134,6 +131,7 @@ fn print_game(
         for (i, pos) in valid_moves.iter().enumerate() {
             let mut letters = "abcdefgh".chars();
             // TODO: Should be uppercase?
+            // TODO: cleaner way than recreating a mutable iterator?
             print!(
                 "{}{}",
                 letters.nth(pos[0]).unwrap().to_uppercase(),
@@ -150,6 +148,7 @@ fn print_game(
     }
 }
 
+// impure - printing
 fn end_game(board: [[Spot; 8]; 8], colors: [Option<[u8; 3]>; 3], pieces: [char; 2]) {
     print_game(board, &Vec::new(), Spot::Empty, false, colors, pieces);
     let (black_total, white_total) = count_pieces(board);
@@ -182,6 +181,7 @@ fn invalid_move(valid_moves: &Vec<[usize; 2]>, message: &'static str) -> [usize;
     get_input(valid_moves)
 }
 
+// impure - input (output not determined by parameters)
 fn get_input(valid_moves: &Vec<[usize; 2]>) -> [usize; 2] {
     print!("Choose where to place piece: ");
     std::io::stdout().flush().unwrap();
@@ -239,9 +239,10 @@ fn get_input(valid_moves: &Vec<[usize; 2]>) -> [usize; 2] {
     }
 }
 
+// impure - random
 fn ai_input(valid_moves: &Vec<[usize; 2]>, wait_time: u64) -> [usize; 2] {
     // randomly moves
-    std::thread::sleep(std::time::Duration::from_millis(wait_time)); // wait 0.6 sec
+    std::thread::sleep(std::time::Duration::from_millis(wait_time));
     let choice = valid_moves.choose(&mut rand::thread_rng());
     match choice {
         Some(choice) => *choice,
@@ -253,7 +254,7 @@ fn find_valid_moves(board: [[Spot; 8]; 8], current_turn: Spot) -> Vec<[usize; 2]
     let mut valid_moves: Vec<[usize; 2]> = vec![];
     for x in 0..8 {
         for y in 0..8 {
-            if valid_move(board, [x, y], current_turn) {
+            if is_valid_move(board, [x, y], current_turn) {
                 valid_moves.push([x, y]);
             }
         }
@@ -261,7 +262,7 @@ fn find_valid_moves(board: [[Spot; 8]; 8], current_turn: Spot) -> Vec<[usize; 2]
     valid_moves
 }
 
-fn valid_move(board: [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) -> bool {
+fn is_valid_move(board: [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) -> bool {
     if board[pos[0]][pos[1]] != Spot::Empty {
         return false;
     }
@@ -297,7 +298,8 @@ fn valid_move(board: [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) -> boo
     false
 }
 
-fn place_piece(board: &mut [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) {
+// impure - modifying board
+fn place_piece(mut board: [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) -> [[Spot; 8]; 8] {
     // assumes valid move
     for x in 0..8 {
         for y in 0..8 {
@@ -341,6 +343,7 @@ fn place_piece(board: &mut [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) 
             }
         }
     }
+    board
 }
 
 fn count_pieces(board: [[Spot; 8]; 8]) -> (u32, u32) {
@@ -358,6 +361,7 @@ fn count_pieces(board: [[Spot; 8]; 8]) -> (u32, u32) {
     (black_total, white_total)
 }
 
+// impure - input (output not determined by parameters)
 fn read_cli_options() -> (bool, bool, [Option<[u8; 3]>; 3], [char; 2], u64) {
     let args: Vec<String> = std::env::args().map(|s| s.to_lowercase()).collect();
     let mut black_is_ai = true;
@@ -482,7 +486,7 @@ fn main() {
         } else {
             get_input(&valid_moves_current)
         };
-        place_piece(&mut board, input, current_turn);
+        board = place_piece(board, input, current_turn);
 
         current_turn = current_turn.get_flip();
     }
