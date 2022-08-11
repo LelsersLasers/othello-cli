@@ -250,6 +250,36 @@ fn ai_input(valid_moves: &Vec<[usize; 2]>, wait_time: u64) -> [usize; 2] {
     }
 }
 
+fn ai_input_2(mut board: [[Spot; 8]; 8], current_turn: Spot, valid_moves: &Vec<[usize; 2]>, wait_time: u64) -> [usize; 2] {
+    // std::thread::sleep(std::time::Duration::from_millis(wait_time));
+    // let choice = valid_moves.choose(&mut rand::thread_rng());
+    // match choice {
+    //     Some(choice) => *choice,
+    //     None => unreachable!(),
+    // }
+    let mut best_moves: Vec<[usize; 2]> = Vec::new();
+    let mut best_score = 0;
+    for valid_move in valid_moves {
+        let board_after_move = place_piece(board, *valid_move, current_turn);
+        let (black_total, white_total) = count_pieces(board_after_move);
+        let move_score = match current_turn {
+            Spot::Black(_) => black_total,
+            Spot::White(_) => white_total,
+            _ => unreachable!(),
+        };
+        if move_score > best_score {
+            best_moves.push(*valid_move);
+            best_score = move_score;
+        }
+    }
+
+    let choice = valid_moves.choose(&mut rand::thread_rng());
+    match choice {
+        Some(choice) => *choice,
+        None => unreachable!(),
+    }
+}
+
 fn find_valid_moves(board: [[Spot; 8]; 8], current_turn: Spot) -> Vec<[usize; 2]> {
     let mut valid_moves: Vec<[usize; 2]> = vec![];
     for x in 0..8 {
