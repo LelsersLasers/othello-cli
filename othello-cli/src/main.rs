@@ -9,16 +9,18 @@ enum Spot {
     White(bool),
 }
 impl Spot {
-    fn to_string(
-        self,
-        colors: [Option<[u8; 3]>; 3],
-        pieces: [char; 2],
-    ) -> colored::ColoredString {
+    fn to_string(self, colors: [Option<[u8; 3]>; 3], pieces: [char; 2]) -> colored::ColoredString {
         match self {
             Spot::Black(last_move) => match colors[0] {
                 Some(color) => match last_move {
-                    true => pieces[0].to_string().italic().bold().truecolor(color[0], color[1], color[2]),
-                    false => pieces[0].to_string().truecolor(color[0], color[1], color[2]),
+                    true => pieces[0]
+                        .to_string()
+                        .italic()
+                        .bold()
+                        .truecolor(color[0], color[1], color[2]),
+                    false => pieces[0]
+                        .to_string()
+                        .truecolor(color[0], color[1], color[2]),
                 },
                 None => match last_move {
                     true => pieces[0].to_string().italic().bold().green(),
@@ -27,8 +29,14 @@ impl Spot {
             },
             Spot::White(last_move) => match colors[1] {
                 Some(color) => match last_move {
-                    true => pieces[1].to_string().italic().bold().truecolor(color[0], color[1], color[2]),
-                    false => pieces[1].to_string().truecolor(color[0], color[1], color[2]),
+                    true => pieces[1]
+                        .to_string()
+                        .italic()
+                        .bold()
+                        .truecolor(color[0], color[1], color[2]),
+                    false => pieces[1]
+                        .to_string()
+                        .truecolor(color[0], color[1], color[2]),
                 },
                 None => match last_move {
                     true => pieces[1].to_string().italic().bold().red(),
@@ -126,7 +134,11 @@ fn print_game(
         for (i, pos) in valid_moves.iter().enumerate() {
             let mut letters = "abcdefgh".chars();
             // TODO: Should be uppercase?
-            print!("{}{}", letters.nth(pos[0]).unwrap().to_uppercase(), pos[1] + 1);
+            print!(
+                "{}{}",
+                letters.nth(pos[0]).unwrap().to_uppercase(),
+                pos[1] + 1
+            );
             if i != valid_moves.len() - 1 {
                 print!(", ");
             } else {
@@ -138,19 +150,8 @@ fn print_game(
     }
 }
 
-fn end_game(
-    board: [[Spot; 8]; 8],
-    colors: [Option<[u8; 3]>; 3],
-    pieces: [char; 2],
-) {
-    print_game(
-        board,
-        &Vec::new(),
-        Spot::Empty,
-        false,
-        colors,
-        pieces
-    );
+fn end_game(board: [[Spot; 8]; 8], colors: [Option<[u8; 3]>; 3], pieces: [char; 2]) {
+    print_game(board, &Vec::new(), Spot::Empty, false, colors, pieces);
     let (black_total, white_total) = count_pieces(board);
     if black_total == white_total {
         println!(
@@ -357,25 +358,21 @@ fn count_pieces(board: [[Spot; 8]; 8]) -> (u32, u32) {
     (black_total, white_total)
 }
 
-fn read_cli_options() -> (
-    bool,
-    bool,
-    [Option<[u8; 3]>; 3],
-    [char; 2],
-    u64,
-) {
+fn read_cli_options() -> (bool, bool, [Option<[u8; 3]>; 3], [char; 2], u64) {
     let args: Vec<String> = std::env::args().map(|s| s.to_lowercase()).collect();
     let mut black_is_ai = true;
     let mut white_is_ai = true;
 
     let mut colors = [None; 3];
-    let color_commands = [["bc", "black-color"], ["wc", "white-color"], ["mc", "marked-color"]];
-    
-    // let mut black_piece = 'X';
-    // let mut white_piece = 'O';
+    let color_commands = [
+        ["bc", "black-color"],
+        ["wc", "white-color"],
+        ["mc", "marked-color"],
+    ];
+
     let mut pieces = ['X', 'O'];
     let piece_commands = [["bp", "black-piece"], ["wp", "white-piece"]];
-    
+
     let mut ai_wait_time = 750;
 
     for arg in args.iter() {
@@ -408,20 +405,6 @@ fn read_cli_options() -> (
             black_is_ai = false;
         } else if arg == "w" || arg == "white" {
             white_is_ai = false;
-        // } else if arg == "bp" || arg == "black-piece" {
-        //     let c_idx = args.iter().position(|s| s == arg).unwrap() + 1;
-        //     if c_idx >= args.len() || args[c_idx].len() != 1 {
-        //         println!("Invalid piece");
-        //         std::process::exit(1);
-        //     }
-        //     black_piece = args[c_idx].chars().next().unwrap();
-        // } else if arg == "wp" || arg == "white-piece" {
-        //     let c_idx = args.iter().position(|s| s == arg).unwrap() + 1;
-        //     if c_idx >= args.len() || args[c_idx].len() != 1 {
-        //         println!("Invalid piece");
-        //         std::process::exit(1);
-        //     }
-        //     white_piece = args[c_idx].chars().next().unwrap();
         } else if arg == "t" || arg == "time" {
             let ms_idx = args.iter().position(|s| s == arg).unwrap() + 1;
             if ms_idx >= args.len() || args[ms_idx].parse::<u64>().is_err() {
@@ -429,8 +412,7 @@ fn read_cli_options() -> (
                 std::process::exit(1);
             }
             ai_wait_time = args[ms_idx].parse::<u64>().unwrap();
-        }
-        else {
+        } else {
             for i in 0..3 {
                 if arg == color_commands[i][0] || arg == color_commands[i][1] {
                     let r_idx = args.iter().position(|s| s == arg).unwrap() + 1;
@@ -464,21 +446,14 @@ fn read_cli_options() -> (
         }
     }
 
-    (
-        black_is_ai,
-        white_is_ai,
-        colors,
-        pieces,
-        ai_wait_time,
-    )
+    (black_is_ai, white_is_ai, colors, pieces, ai_wait_time)
 }
 
 fn main() {
     let mut board = create_board();
     let mut current_turn = Spot::Black(true);
 
-    let (black_is_ai, white_is_ai, colors, pieces, ai_wait_time) =
-        read_cli_options();
+    let (black_is_ai, white_is_ai, colors, pieces, ai_wait_time) = read_cli_options();
 
     loop {
         let mut valid_moves_current = find_valid_moves(board, current_turn);
