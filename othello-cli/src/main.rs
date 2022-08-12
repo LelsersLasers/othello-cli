@@ -388,10 +388,9 @@ fn count_pieces(board: [[Spot; 8]; 8]) -> (u32, u32) {
     (black_total, white_total)
 }
 
-fn read_cli_options() -> (bool, bool, [Option<[u8; 3]>; 3], [char; 2], u64) {
+fn read_cli_options() -> ([bool; 2], [Option<[u8; 3]>; 3], [char; 2], u64) {
     let args: Vec<String> = std::env::args().map(|s| s.to_lowercase()).collect();
-    let mut black_is_ai = true;
-    let mut white_is_ai = true;
+    let mut ais = [true; 2];
 
     let mut colors = [None; 3];
     let color_commands = [
@@ -432,9 +431,9 @@ fn read_cli_options() -> (bool, bool, [Option<[u8; 3]>; 3], [char; 2], u64) {
             println!("\t\t\t  format: 'othello-cli time ms' where ms is a positive integer");
             std::process::exit(0);
         } else if arg == "b" || arg == "black" {
-            black_is_ai = false;
+            ais[0] = false;
         } else if arg == "w" || arg == "white" {
-            white_is_ai = false;
+            ais[1] = false;
         } else if arg == "t" || arg == "time" {
             let ms_idx = args.iter().position(|s| s == arg).unwrap() + 1;
             if ms_idx >= args.len() || args[ms_idx].parse::<u64>().is_err() {
@@ -476,49 +475,70 @@ fn read_cli_options() -> (bool, bool, [Option<[u8; 3]>; 3], [char; 2], u64) {
         }
     }
 
-    (black_is_ai, white_is_ai, colors, pieces, ai_wait_time)
+    (ais, colors, pieces, ai_wait_time)
+}
+
+fn turn(
+    mut board: [[Spot; 8]; 8],
+    mut current_turn: Spot,
+    ais: [bool; 2],
+    colors: [Option<[u8; 3]>; 3],
+    pieces: [char; 2],
+    ai_wait_time: u64,
+) -> (bool, [[Spot; 8]; 8], Spot) {
+    let mut valid_moves_current = find_valid_moves(board, current_turn);
+    let valid_moves_opp = find_valid_moves(board, current_turn.get_flip());
+    if valid_moves_current.is_empty() && valid_moves_opp.is_empty() {
+        return (false, board, current_turn);
+    }
+    let skip_turn = valid_moves_current.is_empty();
+    if skip_turn {
+        current_turn = current_turn.get_flip();
+        valid_moves_current = valid_moves_opp;
+    }
+
+    print_game(
+        board,
+        &valid_moves_current,
+        current_turn,
+        skip_turn,
+        colors,
+        pieces,
+    );
+    let input = if (current_turn == Spot::Black(true) && ais[0])
+        || (current_turn == Spot::White(true) && ais[1])
+    {
+        if current_turn == Spot::Black(true) {
+            ai_input_2(board, current_turn, &valid_moves_current, ai_wait_time)
+        } else {
+            ai_input(&valid_moves_current, ai_wait_time)
+        }
+    } else {
+        get_input(&valid_moves_current)
+    };
+    board = place_piece(board, input, current_turn);
+
+    current_turn = current_turn.get_flip();
+
+    (true, board, current_turn)
 }
 
 fn main() {
     let mut board = create_board();
     let mut current_turn = Spot::Black(true);
+    let mut game_on = true;
 
-    let (black_is_ai, white_is_ai, colors, pieces, ai_wait_time) = read_cli_options();
+    let (ais, colors, pieces, ai_wait_time) = read_cli_options();
 
-    loop {
-        let mut valid_moves_current = find_valid_moves(board, current_turn);
-        let valid_moves_opp = find_valid_moves(board, current_turn.get_flip());
-        if valid_moves_current.is_empty() && valid_moves_opp.is_empty() {
-            break;
-        }
-        let skip_turn = valid_moves_current.is_empty();
-        if skip_turn {
-            current_turn = current_turn.get_flip();
-            valid_moves_current = valid_moves_opp;
-        }
-
-        print_game(
+    while game_on {
+        (game_on, board, current_turn) = turn(
             board,
-            &valid_moves_current,
             current_turn,
-            skip_turn,
+            ais,
             colors,
             pieces,
+            ai_wait_time,
         );
-        let input = if (current_turn == Spot::Black(true) && black_is_ai)
-            || (current_turn == Spot::White(true) && white_is_ai)
-        {
-            if current_turn == Spot::Black(true) {
-                ai_input_2(board, current_turn, &valid_moves_current, ai_wait_time)
-            } else {
-                ai_input(&valid_moves_current, ai_wait_time)
-            }
-        } else {
-            get_input(&valid_moves_current)
-        };
-        board = place_piece(board, input, current_turn);
-
-        current_turn = current_turn.get_flip();
     }
     end_game(board, colors, pieces);
 }
