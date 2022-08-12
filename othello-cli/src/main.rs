@@ -78,7 +78,6 @@ fn create_board() -> [[Spot; 8]; 8] {
     board
 }
 
-// impure - printing
 fn print_game(
     board: [[Spot; 8]; 8],
     valid_moves: &[[usize; 2]],
@@ -148,7 +147,6 @@ fn print_game(
     }
 }
 
-// impure - printing
 fn end_game(board: [[Spot; 8]; 8], colors: [Option<[u8; 3]>; 3], pieces: [char; 2]) {
     print_game(board, &Vec::new(), Spot::Empty, false, colors, pieces);
     let (black_total, white_total) = count_pieces(board);
@@ -181,7 +179,6 @@ fn invalid_move(valid_moves: &Vec<[usize; 2]>, message: &'static str) -> [usize;
     get_input(valid_moves)
 }
 
-// impure - input (output not determined by parameters)
 fn get_input(valid_moves: &Vec<[usize; 2]>) -> [usize; 2] {
     print!("Choose where to place piece: ");
     std::io::stdout().flush().unwrap();
@@ -239,7 +236,6 @@ fn get_input(valid_moves: &Vec<[usize; 2]>) -> [usize; 2] {
     }
 }
 
-// impure - random
 fn ai_input(valid_moves: &Vec<[usize; 2]>, wait_time: u64) -> [usize; 2] {
     // randomly moves
     std::thread::sleep(std::time::Duration::from_millis(wait_time));
@@ -250,13 +246,12 @@ fn ai_input(valid_moves: &Vec<[usize; 2]>, wait_time: u64) -> [usize; 2] {
     }
 }
 
-fn ai_input_2(mut board: [[Spot; 8]; 8], current_turn: Spot, valid_moves: &Vec<[usize; 2]>, wait_time: u64) -> [usize; 2] {
-    // std::thread::sleep(std::time::Duration::from_millis(wait_time));
-    // let choice = valid_moves.choose(&mut rand::thread_rng());
-    // match choice {
-    //     Some(choice) => *choice,
-    //     None => unreachable!(),
-    // }
+fn ai_input_2(
+    board: [[Spot; 8]; 8],
+    current_turn: Spot,
+    valid_moves: &Vec<[usize; 2]>,
+    wait_time: u64,
+) -> [usize; 2] {
     let mut best_moves: Vec<[usize; 2]> = Vec::new();
     let mut best_score = 0;
     for valid_move in valid_moves {
@@ -268,12 +263,15 @@ fn ai_input_2(mut board: [[Spot; 8]; 8], current_turn: Spot, valid_moves: &Vec<[
             _ => unreachable!(),
         };
         if move_score > best_score {
-            best_moves.push(*valid_move);
+            best_moves = vec![*valid_move];
             best_score = move_score;
+        } else if move_score == best_score {
+            best_moves.push(*valid_move);
         }
     }
 
-    let choice = valid_moves.choose(&mut rand::thread_rng());
+    std::thread::sleep(std::time::Duration::from_millis(wait_time));
+    let choice = best_moves.choose(&mut rand::thread_rng());
     match choice {
         Some(choice) => *choice,
         None => unreachable!(),
@@ -328,7 +326,6 @@ fn is_valid_move(board: [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) -> 
     false
 }
 
-// impure - modifying board
 fn place_piece(mut board: [[Spot; 8]; 8], pos: [usize; 2], current_turn: Spot) -> [[Spot; 8]; 8] {
     // assumes valid move
     for x in 0..8 {
@@ -391,7 +388,6 @@ fn count_pieces(board: [[Spot; 8]; 8]) -> (u32, u32) {
     (black_total, white_total)
 }
 
-// impure - input (output not determined by parameters)
 fn read_cli_options() -> (bool, bool, [Option<[u8; 3]>; 3], [char; 2], u64) {
     let args: Vec<String> = std::env::args().map(|s| s.to_lowercase()).collect();
     let mut black_is_ai = true;
@@ -512,7 +508,11 @@ fn main() {
         let input = if (current_turn == Spot::Black(true) && black_is_ai)
             || (current_turn == Spot::White(true) && white_is_ai)
         {
-            ai_input(&valid_moves_current, ai_wait_time)
+            if current_turn == Spot::Black(true) {
+                ai_input_2(board, current_turn, &valid_moves_current, ai_wait_time)
+            } else {
+                ai_input(&valid_moves_current, ai_wait_time)
+            }
         } else {
             get_input(&valid_moves_current)
         };

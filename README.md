@@ -1,5 +1,5 @@
 # othello-cli
-othello-cli is a cli version of Othello written in Rust.
+othello-cli is a cli version of Othello (Reversi) written in Rust.
 You can play against another player, the AI, or watch two AIs play each other.
 
 https://user-images.githubusercontent.com/48894200/183278088-707948e6-55cf-4346-bb36-961a3c0321e8.mp4
