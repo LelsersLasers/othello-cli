@@ -4,6 +4,8 @@ You can play against another player, the AI, or watch two AIs play each other.
 
 https://user-images.githubusercontent.com/48894200/183278088-707948e6-55cf-4346-bb36-961a3c0321e8.mp4
 
+crates.io link: https://crates.io/crates/othello-cli
+
 ```
 >>> othello-cli help
 Usage: othello-cli [options]
@@ -31,8 +33,7 @@ Options:
                           format: 'othello-cli time ms' where ms is a positive integer
 ```
 
-- Rules of Othello: https://www.eothello.com/#how-to-play
-- crates.io link: https://crates.io/crates/othello-cli
+Rules of Othello: https://www.eothello.com/#how-to-play
 
 ![Showcase Image 2](https://github.com/LelsersLasers/Othello/raw/main/Showcase/Showcase2.PNG)
 
